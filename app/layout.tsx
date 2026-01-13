@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "RAD5 Attendance System",
   description: "Location-based attendance tracking system",
   
+}
 
 export default function RootLayout({
   children,
