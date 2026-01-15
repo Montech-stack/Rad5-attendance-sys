@@ -1,115 +1,147 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { AlertCircle, CheckCircle2, MapPin, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, MapPin, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// Backend endpoint
+const CHECK_IN_URL = "https://attendance.bookbank.com.ng/api/v1/attendance/check-in"; // replace with actual URL
 
 // Building location (example: RAD5 headquarters)
 const BUILDING_LOCATION = {
-  latitude: 40.7128,
-  longitude: -74.006,
-  radius: 150, // meters
-}
+  latitude: 5.11883,
+  longitude: 7.36927,
+  radius: 50, // meters
+};
 
 interface LocationCheckerModalProps {
-  isOpen: boolean
-  onCheckInSuccess: (location: { lat: number; lng: number; timestamp: string }) => void
-  onCheckInFailed: () => void
-  onClose: () => void
+  isOpen: boolean;
+  token: string; // Authorization token
+  onCheckInSuccess: (data: any) => void;
+  onCheckInFailed: () => void;
+  onClose: () => void;
 }
 
-type CheckingStatus = "checking" | "success" | "failed" | "idle"
+type CheckingStatus = "checking" | "success" | "failed" | "idle";
 
 export default function LocationCheckerModal({
   isOpen,
+  token,
   onCheckInSuccess,
   onCheckInFailed,
   onClose,
 }: LocationCheckerModalProps) {
-  const [status, setStatus] = useState<CheckingStatus>("idle")
-  const [errorMessage, setErrorMessage] = useState("")
+  const [status, setStatus] = useState<CheckingStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371000 // Earth's radius in meters
-    const φ1 = (lat1 * Math.PI) / 180
-    const φ2 = (lat2 * Math.PI) / 180
-    const Δφ = ((lat2 - lat1) * Math.PI) / 180
-    const Δλ = ((lon2 - lon1) * Math.PI) / 180
+    const R = 6371000; // Earth's radius in meters
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c
-  }
+    return R * c;
+  };
 
   const checkLocation = async () => {
-    setStatus("checking")
-    setErrorMessage("")
-
-    // Simulate checking delay for better UX
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    setStatus("checking");
+    setErrorMessage("");
 
     try {
-      // Get user's current location
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLat = position.coords.latitude
-          const userLng = position.coords.longitude
-          const accuracy = position.coords.accuracy
+        async (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
 
-          // Calculate distance from user to building
-          const distance = calculateDistance(userLat, userLng, BUILDING_LOCATION.latitude, BUILDING_LOCATION.longitude)
+          const distance = calculateDistance(
+            userLat,
+            userLng,
+            BUILDING_LOCATION.latitude,
+            BUILDING_LOCATION.longitude
+          );
 
-          // Check if user is within the building radius + geolocation accuracy
           if (distance <= BUILDING_LOCATION.radius + accuracy) {
-            setStatus("success")
-            setTimeout(() => {
-              onCheckInSuccess({
-                lat: userLat,
-                lng: userLng,
-                timestamp: new Date().toISOString(),
-              })
-              setStatus("idle")
-            }, 1500)
+            try {
+              // Send location to backend
+              const response = await fetch(CHECK_IN_URL, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  loginTime: new Date().toISOString(),
+                  latitude: userLat,
+                  longitude: userLng,
+                }),
+              });
+
+              const data = await response.json();
+              console.log("📌 Backend check-in response:", data);
+
+              if (data.success) {
+                setStatus("success");
+                setTimeout(() => {
+                  onCheckInSuccess(data.data); // send backend attendance data to parent
+                  setStatus("idle");
+                }, 1500);
+              } else {
+                setStatus("failed");
+                setErrorMessage(data.message || "Check-in failed on server");
+                onCheckInFailed();
+              }
+            } catch (err) {
+              console.error(err);
+              setStatus("failed");
+              setErrorMessage("Failed to reach backend. Please try again.");
+              onCheckInFailed();
+            }
           } else {
-            setStatus("failed")
+            setStatus("failed");
             setErrorMessage(
-              `You are ${Math.round(distance - BUILDING_LOCATION.radius)} meters away from the building. Please move closer to check in.`,
-            )
+              `You are ${Math.round(distance - BUILDING_LOCATION.radius)} meters away from the building. Please move closer to check in.`
+            );
+            onCheckInFailed();
           }
         },
         (error) => {
-          setStatus("failed")
+          setStatus("failed");
           if (error.code === error.PERMISSION_DENIED) {
-            setErrorMessage("Location permission denied. Please enable location access in your browser settings.")
+            setErrorMessage(
+              "Location permission denied. Please enable location access in your browser settings."
+            );
           } else {
-            setErrorMessage("Unable to get your location. Please ensure location services are enabled.")
+            setErrorMessage("Unable to get your location. Please ensure location services are enabled.");
           }
+          onCheckInFailed();
         },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        },
-      )
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
     } catch (err) {
-      setStatus("failed")
-      setErrorMessage("An error occurred while checking your location.")
+      setStatus("failed");
+      setErrorMessage("An error occurred while checking your location.");
+      onCheckInFailed();
     }
-  }
+  };
 
   useEffect(() => {
     if (isOpen && status === "idle") {
-      checkLocation()
+      checkLocation();
     }
-  }, [isOpen])
+  }, [isOpen]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-card rounded-lg shadow-lg max-w-sm w-full p-6 space-y-6">
-        {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
             {status === "checking" && (
@@ -150,7 +182,6 @@ export default function LocationCheckerModal({
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-2">
           {(status === "failed" || status === "idle") && (
             <>
@@ -180,5 +211,5 @@ export default function LocationCheckerModal({
         </div>
       </div>
     </div>
-  )
+  );
 }

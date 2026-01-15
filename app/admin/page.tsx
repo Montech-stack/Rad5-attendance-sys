@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { userLogin } from "@/services/authService";
+import { adminLogin } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,37 +22,16 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await userLogin(email, password);
+      const res = await adminLogin(email, password);
+      // Assuming API returns: { token, admin: { name, email, role } }
+      const { token, admin } = res;
 
-      if (!res.success || !res.data) {
-        throw new Error(res.message || "Login failed");
-      }
-
-      const { token, user } = res.data;
-
-      if (!token || !user) {
-        throw new Error("Invalid login response from server");
-      }
-
-      // Save token & user
+      // Save token & user info
       localStorage.setItem("token", token);
-      localStorage.setItem("currentUser", JSON.stringify(user));
-
-      // Determine role
-      let role = "unknown";
-      // Replace these with your actual role IDs from the backend
-      const ADMIN_ROLE_ID = "YOUR_ADMIN_ROLE_ID";
-      const STAFF_ROLE_ID = "2c174628-fc9f-4662-8d29-13f87c835944"; // example from backend
-      const STUDENT_ROLE_ID = "STUDENT_ROLE_ID";
-
-      if (user.roleId === ADMIN_ROLE_ID) role = "admin";
-      else if (user.roleId === STAFF_ROLE_ID) role = "staff";
-      else if (user.roleId === STUDENT_ROLE_ID) role = "student";
+      localStorage.setItem("currentUser", JSON.stringify(admin));
 
       // Redirect based on role
-      if (role === "admin") router.push("/dashboard");
-      else router.push("/profile");
-
+      router.push(admin.role === "admin" ? "/dashboard" : "/profile");
     } catch (err: any) {
       setError(err.message || "Login failed. Please check your credentials.");
     } finally {

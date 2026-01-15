@@ -3,98 +3,114 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Clock, LogOut } from "lucide-react"
 import LocationCheckerModal from "@/components/check-in/location-checker-modal"
 
-interface User {
-  email: string
-  name: string
-  role: string
-}
+const CHECK_OUT_URL = "https://attendance.bookbank.com.ng/api/v1/attendance/check-out" // replace with actual URL
 
-interface CheckInRecord {
+interface Attendance {
+  status: string
   checkInTime: string
-  checkInLocation: { lat: number; lng: number }
+  latitude: number | string
+  longitude: number | string
+  checkOutTime?: string
 }
 
-export default function QuickCheckIn({ user }: { user: User }) {
-  const [checkedIn, setCheckedIn] = useState(false)
-  const [checkInRecord, setCheckInRecord] = useState<CheckInRecord | null>(null)
-  const [showLocationModal, setShowLocationModal] = useState(false)
+export default function QuickCheckIn() {
+  const [open, setOpen] = useState(false)
+  const [attendance, setAttendance] = useState<Attendance | null>(null)
+  const [checkingOut, setCheckingOut] = useState(false)
 
-  const handleCheckInSuccess = (location: { lat: number; lng: number; timestamp: string }) => {
-    setShowLocationModal(false)
-    setCheckedIn(true)
-    setCheckInRecord({
-      checkInTime: new Date(location.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }),
-      checkInLocation: location,
-    })
-  }
+  const token = localStorage.getItem("token") || ""
 
-  const handleCheckInFailed = () => {
-    // Modal will show the error message
-  }
+  const handleCheckOut = async () => {
+    if (!attendance) return
+    setCheckingOut(true)
 
-  const handleCheckOut = () => {
-    setCheckedIn(false)
-    setCheckInRecord(null)
+    try {
+      const now = new Date()
+      const hours = now.getHours().toString().padStart(2, "0")
+      const minutes = now.getMinutes().toString().padStart(2, "0")
+      const checkOutTime = `${hours}:${minutes}`
+
+      const response = await fetch(CHECK_OUT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ checkOutTime }),
+      })
+
+      const data = await response.json()
+      console.log("📌 Checkout response:", data)
+
+      if (data.success) {
+        // Update attendance with checkout info
+        setAttendance(prev => prev ? { ...prev, checkOutTime: checkOutTime } : null)
+        alert("Checked out successfully!")
+        // Reset after checkout
+        setAttendance(null)
+      } else {
+        alert(data.message || "Checkout failed")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Failed to checkout. Try again.")
+    } finally {
+      setCheckingOut(false)
+    }
   }
 
   return (
     <>
-      <Card className="w-full">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Check In / Check Out</CardTitle>
+          <CardTitle>Quick Attendance</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {!checkedIn ? (
-            <div>
-              <p className="text-sm text-muted-foreground mb-4">You are currently checked out</p>
-              <Button
-                className="w-full bg-accent hover:bg-accent/90"
-                size="lg"
-                onClick={() => setShowLocationModal(true)}
-              >
-                <MapPin className="w-4 h-4 mr-2" />
-                Check In
-              </Button>
-            </div>
+        <CardContent>
+          {!attendance ? (
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => setOpen(true)}
+            >
+              Check In
+            </Button>
           ) : (
-            <div>
-              <div className="bg-accent/10 border border-accent rounded-lg p-4 mb-4">
-                <div className="flex items-center gap-2 text-accent mb-2">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm font-medium">Checked In</span>
-                </div>
-                {checkInRecord && (
-                  <>
-                    <p className="text-xs text-muted-foreground">Check-in time: {checkInRecord.checkInTime}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Location: ({checkInRecord.checkInLocation.lat.toFixed(4)},{" "}
-                      {checkInRecord.checkInLocation.lng.toFixed(4)})
-                    </p>
-                  </>
-                )}
-              </div>
-              <Button className="w-full bg-destructive hover:bg-destructive/90" size="lg" onClick={handleCheckOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Check Out
-              </Button>
+            <div className="text-sm space-y-2">
+              <p>Status: {attendance.status}</p>
+              <p>Check-In Time: {new Date(attendance.checkInTime).toLocaleTimeString()}</p>
+              <p>
+                Location: {Number(attendance.latitude).toFixed(4)}, {Number(attendance.longitude).toFixed(4)}
+              </p>
+
+              {!attendance.checkOutTime && (
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white mt-2"
+                  onClick={handleCheckOut}
+                  disabled={checkingOut}
+                >
+                  {checkingOut ? "Checking Out..." : "Check Out"}
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
       <LocationCheckerModal
-        isOpen={showLocationModal}
-        onCheckInSuccess={handleCheckInSuccess}
-        onCheckInFailed={handleCheckInFailed}
-        onClose={() => setShowLocationModal(false)}
+        isOpen={open}
+        token={token}
+        onCheckInSuccess={(data) => {
+          console.log("📌 Final attendance data:", data)
+          setAttendance(data)
+          setOpen(false)
+        }}
+        onCheckInFailed={() => {
+          console.log("❌ Check-in failed")
+          setOpen(false)
+        }}
+        onClose={() => setOpen(false)}
       />
     </>
   )
-}
+} 
