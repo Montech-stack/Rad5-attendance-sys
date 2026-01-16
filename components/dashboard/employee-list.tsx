@@ -12,6 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
 import AddUserForm from "./add-user-form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface User {
   id: string;
@@ -38,22 +45,32 @@ export default function EmployeeList({
 }: EmployeeListProps) {
   const [search, setSearch] = useState("");
   const [filteredUsers, setFilteredUsers] = useState<User[]>(users || []);
+  const [filterType, setFilterType] = useState<"all" | "student" | "staff">("all");
 
+  // Update filtered users when users or filter changes
   useEffect(() => {
-    setFilteredUsers(users);
-  }, [users]);
+    let updated = [...users];
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    const filtered = users.filter(
-      (user) =>
-        `${user.firstName} ${user.lastName}`
-          .toLowerCase()
-          .includes(value.toLowerCase()) ||
-        (user.department?.toLowerCase() || "").includes(value.toLowerCase())
-    );
-    setFilteredUsers(filtered);
-  };
+    // Filter by type
+    if (filterType === "student") {
+      updated = updated.filter((u) => u.trackId);
+    } else if (filterType === "staff") {
+      updated = updated.filter((u) => !u.trackId);
+    }
+
+    // Apply search filter
+    if (search.trim()) {
+      updated = updated.filter(
+        (user) =>
+          `${user.firstName} ${user.lastName}`
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
+          (user.department?.toLowerCase() || "").includes(search.toLowerCase())
+      );
+    }
+
+    setFilteredUsers(updated);
+  }, [users, search, filterType]);
 
   return (
     <Card className="border-0 shadow-sm">
@@ -72,17 +89,32 @@ export default function EmployeeList({
       </CardHeader>
 
       <CardContent>
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative">
+        {/* Search + Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:gap-4">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or department..."
+              placeholder="Search by name..."
               className="pl-10 bg-input"
               value={search}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
+          {/* Filter dropdown */}
+          <Select
+            value={filterType}
+            onValueChange={(val) => setFilterType(val as "all" | "student" | "staff")}
+          >
+            <SelectTrigger className="w-40 mt-2 sm:mt-0">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="student">Students</SelectItem>
+              <SelectItem value="staff">Staff</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {filteredUsers.length === 0 ? (
@@ -98,12 +130,11 @@ export default function EmployeeList({
               >
                 {/* Left side: Name + email */}
                 <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                  {/* Name + status on mobile, badge moves right on desktop */}
+                  {/* Name + status on mobile */}
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-foreground">
                       {user.firstName} {user.lastName}
                     </span>
-                    {/* Mobile badge */}
                     <Badge
                       className="sm:hidden"
                       variant={
