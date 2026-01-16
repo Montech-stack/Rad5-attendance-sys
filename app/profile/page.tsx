@@ -27,11 +27,7 @@ export default function ProfilePage() {
 
     try {
       const parsedUser: User = JSON.parse(storedUser);
-      if (!parsedUser.role) parsedUser.role = "staff"; // fallback
-      if (parsedUser.role === "admin") {
-        router.push("/dashboard");
-        return;
-      }
+
       setUser(parsedUser);
     } catch (err) {
       console.error("Failed to parse user from localStorage:", err);
