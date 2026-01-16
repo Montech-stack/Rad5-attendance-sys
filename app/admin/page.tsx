@@ -54,7 +54,7 @@ export default function LoginPage() {
 
         <Card className="border-0 shadow-lg">
           <CardHeader className="space-y-1">
-            <CardTitle>Welcome Back</CardTitle>
+            <CardTitle>Admin Panel</CardTitle>
             <CardDescription>Sign in with your email and password</CardDescription>
           </CardHeader>
           <CardContent>
