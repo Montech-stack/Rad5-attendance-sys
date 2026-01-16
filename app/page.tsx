@@ -38,16 +38,11 @@ export default function LoginPage() {
       localStorage.setItem("token", token);
       localStorage.setItem("currentUser", JSON.stringify(user));
 
+      console.log("Login successful:", user);
+
       // Determine role
       let role = "unknown";
-      // Replace these with your actual role IDs from the backend
-      const ADMIN_ROLE_ID = "YOUR_ADMIN_ROLE_ID";
-      const STAFF_ROLE_ID = "2c174628-fc9f-4662-8d29-13f87c835944"; // example from backend
-      const STUDENT_ROLE_ID = "STUDENT_ROLE_ID";
-
-      if (user.roleId === ADMIN_ROLE_ID) role = "admin";
-      else if (user.roleId === STAFF_ROLE_ID) role = "staff";
-      else if (user.roleId === STUDENT_ROLE_ID) role = "student";
+    
 
       // Redirect based on role
       if (role === "admin") router.push("/dashboard");

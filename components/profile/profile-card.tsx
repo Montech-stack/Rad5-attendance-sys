@@ -9,18 +9,18 @@ interface UserProfile {
   email: string;
   name: string;
   role: string;
-  profileImage?: string; // optional profile image URL
+  trackId?: string | null;
+  profileImage?: string;
 }
 
 export default function ProfileCard({ user }: { user: UserProfile }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user.name,
-    profileImage: user.profileImage || "", // default empty
+    profileImage: user.profileImage || "",
   });
 
   const handleSave = async () => {
-    // TODO: Call backend endpoint to update name & profileImage
     setIsEditing(false);
     console.log("Saved data:", formData);
   };
@@ -32,79 +32,98 @@ export default function ProfileCard({ user }: { user: UserProfile }) {
     reader.onloadend = () => {
       setFormData({ ...formData, profileImage: reader.result as string });
     };
-    reader.readAsDataURL(file); // convert to base64 for preview
+    reader.readAsDataURL(file);
   };
 
   const getInitial = (name: string) => name.charAt(0).toUpperCase();
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-3 sm:pb-6">
-        <CardTitle className="text-base sm:text-lg">Profile</CardTitle>
-        <CardDescription className="text-xs sm:text-sm">Your account information</CardDescription>
+      <CardHeader className="pb-4">
+        <CardTitle>Profile</CardTitle>
+        <CardDescription>Your account information</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 sm:space-y-6">
-        {/* Profile Avatar */}
+
+      <CardContent className="space-y-6">
+        {/* Avatar */}
         <div className="flex justify-center">
           {formData.profileImage ? (
             <img
               src={formData.profileImage}
               alt="Profile"
-              className="w-16 sm:w-20 h-16 sm:h-20 rounded-full object-cover"
+              className="w-20 h-20 rounded-full object-cover"
             />
           ) : (
-            <div className="w-16 sm:w-20 h-16 sm:h-20 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold">
+            <div className="w-20 h-20 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold">
               {getInitial(formData.name)}
             </div>
           )}
         </div>
 
         {!isEditing ? (
-          <div className="space-y-3 sm:space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Full Name</p>
-              <p className="text-sm sm:text-base font-medium text-foreground">{formData.name}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Email</p>
-              <p className="text-xs sm:text-sm font-medium text-foreground">{user.email}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Role</p>
-              <p className="text-xs sm:text-sm font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded w-fit">
-                {user.role}
-              </p>
-            </div>
-            <Button className="w-full text-sm sm:text-base" onClick={() => setIsEditing(true)}>
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b">
+                  <td className="p-3 font-medium bg-muted">Full Name</td>
+                  <td className="p-3">{formData.name}</td>
+                </tr>
+
+                <tr className="border-b">
+                  <td className="p-3 font-medium bg-muted">Email</td>
+                  <td className="p-3">{user.email}</td>
+                </tr>
+
+                <tr className="border-b">
+                  <td className="p-3 font-medium bg-muted">Role</td>
+                  <td className="p-3 capitalize">{user.role}</td>
+                </tr>
+
+                {user.role === "Student" && user.trackId && (
+                  <tr>
+                    <td className="p-3 font-medium bg-muted">Track</td>
+                    <td className="p-3">{user.trackId}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            <Button className="w-full mt-4" onClick={() => setIsEditing(true)}>
               Edit Profile
             </Button>
           </div>
         ) : (
-          <div className="space-y-3 sm:space-y-4">
-            {/* Name Input */}
+          <div className="space-y-4">
             <div>
               <label className="text-xs text-muted-foreground">Full Name</label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="mt-1 text-sm"
+                className="mt-1"
               />
             </div>
 
-            {/* Profile Image Input */}
             <div>
               <label className="text-xs text-muted-foreground">Profile Image</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="mt-1 text-sm"
+                className="mt-1"
               />
             </div>
 
-            <div className="flex gap-2 flex-col sm:flex-row">
-              <Button className="flex-1 text-sm" onClick={handleSave}>Save Changes</Button>
-              <Button variant="outline" className="flex-1 bg-transparent text-sm" onClick={() => setIsEditing(false)}>Cancel</Button>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={handleSave}>
+                Save Changes
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         )}

@@ -27,7 +27,7 @@ export default function ProfilePage() {
 
     try {
       const parsedUser: User = JSON.parse(storedUser);
-      if (!parsedUser.role) parsedUser.role = "student"; // fallback
+      if (!parsedUser.role) parsedUser.role = "staff"; // fallback
       if (parsedUser.role === "admin") {
         router.push("/dashboard");
         return;
@@ -46,18 +46,22 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-background">
       <DashboardHeader user={{ ...user, name: fullName }} />
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-1 order-2 lg:order-1">
-            <ProfileCard user={{ ...user, name: fullName }} />
-          </div>
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6">
 
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-1 lg:order-2">
-            <QuickCheckIn user={{ ...user, name: fullName }} />
-            <AttendanceOverview user={{ ...user, name: fullName }} />
+
+            {/* On MOBILE: QuickCheckIn FIRST, ProfileCard SECOND */}
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-1">
+              <QuickCheckIn user={{ ...user, name: fullName }} />
+              <div className="lg:col-span-1 order-2">
+                <ProfileCard user={{ ...user, name: fullName, trackId: (user as any).trackId }} />
+              </div>
+              <AttendanceOverview user={{ ...user, name: fullName }} />
+            </div>
+
           </div>
         </div>
-      </div>
+
     </main>
   );
 }
