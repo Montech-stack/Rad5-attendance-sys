@@ -12,6 +12,7 @@ interface User {
   firstName: string;
   lastName: string;
   role: string;
+  trackId?: string | null;
 }
 
 export default function ProfilePage() {
@@ -27,7 +28,6 @@ export default function ProfilePage() {
 
     try {
       const parsedUser: User = JSON.parse(storedUser);
-
       setUser(parsedUser);
     } catch (err) {
       console.error("Failed to parse user from localStorage:", err);
@@ -35,29 +35,41 @@ export default function ProfilePage() {
     }
   }, [router]);
 
-  if (!user) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  if (!user)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
 
   const fullName = `${user.firstName} ${user.lastName}`;
 
   return (
     <main className="min-h-screen bg-background">
       <DashboardHeader user={{ ...user, name: fullName }} />
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6">
 
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        {/* RESPONSIVE LAYOUT */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          
+          {/* LEFT SIDE ON DESKTOP / TOP ON MOBILE */}
+          <div className="lg:col-span-2 order-1 space-y-4 sm:space-y-6">
+            <QuickCheckIn user={{ ...user, name: fullName }} />
+            <AttendanceOverview user={{ ...user, name: fullName }} />
+          </div>
 
-            {/* On MOBILE: QuickCheckIn FIRST, ProfileCard SECOND */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-1">
-              <QuickCheckIn user={{ ...user, name: fullName }} />
-              <div className="lg:col-span-1 order-2">
-                <ProfileCard user={{ ...user, name: fullName, trackId: (user as any).trackId }} />
-              </div>
-              <AttendanceOverview user={{ ...user, name: fullName }} />
-            </div>
-
+          {/* RIGHT SIDE ON DESKTOP / BOTTOM ON MOBILE */}
+          <div className="lg:col-span-1 order-2">
+            <ProfileCard
+              user={{
+                ...user,
+                name: fullName,
+                trackId: user.trackId ?? null,
+              }}
+            />
           </div>
         </div>
-
+      </div>
     </main>
   );
 }
