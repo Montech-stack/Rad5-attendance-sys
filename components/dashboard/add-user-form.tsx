@@ -53,12 +53,13 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
   const isStudent = selectedRole?.name.toLowerCase() === "student"
 
   // ======================
-  // FETCH ROLES
+  // FETCH ROLES (WRAPPED RESPONSE)
   // ======================
   const fetchRoles = async () => {
     try {
       console.log("📡 Fetching roles...")
       const res = await apiRequest("/roles/roles")
+
       console.log("✅ Roles fetched:", res.data.data)
       setRoles(res.data.data || [])
     } catch (err: any) {
@@ -68,19 +69,28 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
   }
 
   // ======================
-  // FETCH TRACKS
+  // FETCH TRACKS (RAW ARRAY RESPONSE ✅)
   // ======================
-  const fetchTracks = async () => {
+    const fetchTracks = async () => {
     try {
-      console.log("📡 Fetching tracks...")
-      const res = await apiRequest("/tracks/tracks")
-      console.log("✅ Tracks fetched:", res.data.data)
-      setTracks(res.data.data || [])
+        console.log("📡 Fetching tracks...")
+
+        const res = await apiRequest("/tracks/tracks")
+
+        console.log("FULL TRACK RESPONSE:", res)
+
+        // 👉 IMPORTANT FIX — because YOUR API returns a raw array
+        const tracksArray = Array.isArray(res) ? res : res.data
+
+        setTracks(tracksArray || [])
+
+        console.log("✅ Tracks set in state:", tracksArray)
     } catch (err: any) {
-      console.error("❌ Failed to fetch tracks:", err)
-      setTracks([])
+        console.error("❌ Failed to fetch tracks:", err)
+        setTracks([])
     }
-  }
+    }
+
 
   useEffect(() => {
     fetchRoles()
@@ -100,9 +110,9 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
         method: "POST",
         body: JSON.stringify({ name }),
       })
-      console.log("✅ Role created:", res.data.data)
+
       alert(`Role "${res.data.data.name}" created successfully!`)
-      await fetchRoles() // refresh roles after creation
+      await fetchRoles()
     } catch (err: any) {
       console.error("❌ Failed to create role:", err)
       alert(err.message || "Failed to create role")
@@ -118,13 +128,14 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
 
     try {
       console.log("📡 Creating new track:", name)
-      const res = await apiRequest("/tracks/track", {
+
+      await apiRequest("/tracks/track", {
         method: "POST",
         body: JSON.stringify({ name }),
       })
-      console.log("✅ Track created:", res.data.data)
-      alert(`Track "${res.data.data.name}" created successfully!`)
-      await fetchTracks() // refresh tracks after creation
+
+      alert(`Track "${name}" created successfully!`)
+      await fetchTracks()
     } catch (err: any) {
       console.error("❌ Failed to create track:", err)
       alert(err.message || "Failed to create track")
@@ -138,7 +149,6 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
     setLoading(true)
     setError("")
 
-    // Ensure student has track selected
     if (isStudent && !trackId) {
       setError("Please select a track for students")
       setLoading(false)
@@ -149,15 +159,7 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
     const lastName = rest.join(" ")
 
     try {
-      console.log("📡 Adding new user:", {
-        firstName,
-        lastName,
-        email,
-        roleId,
-        trackId: isStudent ? trackId : undefined,
-      })
-
-      const res = await apiRequest("/users/user", {
+      await apiRequest("/users/user", {
         method: "POST",
         body: JSON.stringify({
           firstName,
@@ -169,9 +171,6 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
         }),
       })
 
-      console.log("✅ User created:", res.data.data)
-
-      // Reset form
       setOpen(false)
       setFullName("")
       setEmail("")
@@ -220,7 +219,7 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
             onChange={e => setPassword(e.target.value)}
           />
 
-          {/* ROLE */}
+          {/* ROLE SELECT */}
           <div className="flex gap-2">
             <Select value={roleId} onValueChange={setRoleId}>
               <SelectTrigger className="flex-1">
@@ -240,7 +239,7 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
             </Button>
           </div>
 
-          {/* TRACK – STUDENT ONLY */}
+          {/* TRACK SELECT (ONLY FOR STUDENTS) */}
           {isStudent && (
             <div className="flex gap-2">
               <Select value={trackId} onValueChange={setTrackId}>
