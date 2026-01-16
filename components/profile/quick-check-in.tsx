@@ -1,27 +1,78 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import LocationCheckerModal from "@/components/check-in/location-checker-modal"
 
-const CHECK_OUT_URL = "https://attendance.bookbank.com.ng/api/v1/attendance/check-out" // replace with actual URL
+const CHECK_OUT_URL =
+  "https://attendance.bookbank.com.ng/api/v1/attendance/check-out"
+
+const GET_ATTENDANCE_BY_USER =
+  "https://attendance.bookbank.com.ng/api/v1/attendance/attendance/users"
 
 interface Attendance {
+  id?: string
+  userId?: string
+  date?: string
   status: string
   checkInTime: string
   latitude: number | string
   longitude: number | string
-  checkOutTime?: string
+  checkOutTime?: string | null
 }
 
 export default function QuickCheckIn() {
   const [open, setOpen] = useState(false)
   const [attendance, setAttendance] = useState<Attendance | null>(null)
   const [checkingOut, setCheckingOut] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const token = localStorage.getItem("token") || ""
+  const storedUser = localStorage.getItem("currentUser")
+  const userId = storedUser ? JSON.parse(storedUser).id : null
 
+  // ----------------------------------------
+  // FETCH TODAY'S ATTENDANCE ON LOAD
+  // ----------------------------------------
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false)
+      return
+    }
+
+    async function fetchMyAttendance() {
+      try {
+        const res = await fetch(`${GET_ATTENDANCE_BY_USER}/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        const result = await res.json()
+
+        if (result.success) {
+          const today = new Date().toISOString().split("T")[0]
+
+          const todayRecord = result.data.find(
+            (a: any) => a.date === today
+          )
+
+          setAttendance(todayRecord || null)
+        }
+      } catch (err) {
+        console.error("Failed to fetch attendance:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMyAttendance()
+  }, [userId, token])
+
+  // ----------------------------------------
+  // CHECK OUT HANDLER
+  // ----------------------------------------
   const handleCheckOut = async () => {
     if (!attendance) return
     setCheckingOut(true)
@@ -45,11 +96,23 @@ export default function QuickCheckIn() {
       console.log("📌 Checkout response:", data)
 
       if (data.success) {
-        // Update attendance with checkout info
-        setAttendance(prev => prev ? { ...prev, checkOutTime: checkOutTime } : null)
+        // Re-fetch attendance so we stay in sync with backend
+        const res = await fetch(`${GET_ATTENDANCE_BY_USER}/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+
+        const result = await res.json()
+
+        if (result.success) {
+          const today = new Date().toISOString().split("T")[0]
+          const todayRecord = result.data.find(
+            (a: any) => a.date === today
+          )
+
+          setAttendance(todayRecord || null)
+        }
+
         alert("Checked out successfully!")
-        // Reset after checkout
-        setAttendance(null)
       } else {
         alert(data.message || "Checkout failed")
       }
@@ -61,12 +124,26 @@ export default function QuickCheckIn() {
     }
   }
 
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Attendance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Loading attendance...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <>
       <Card>
         <CardHeader>
           <CardTitle>Quick Attendance</CardTitle>
         </CardHeader>
+
         <CardContent>
           {!attendance ? (
             <Button
@@ -77,13 +154,38 @@ export default function QuickCheckIn() {
             </Button>
           ) : (
             <div className="text-sm space-y-2">
-              <p>Status: {attendance.status}</p>
-              <p>Check-In Time: {new Date(attendance.checkInTime).toLocaleTimeString()}</p>
               <p>
-                Location: {Number(attendance.latitude).toFixed(4)}, {Number(attendance.longitude).toFixed(4)}
+                <strong>Status:</strong>{" "}
+                <span
+                  className={
+                    attendance.status === "LATE"
+                      ? "text-red-500"
+                      : "text-green-600"
+                  }
+                >
+                  {attendance.status}
+                </span>
               </p>
 
-              {!attendance.checkOutTime && (
+              <p>
+                <strong>Check-In:</strong>{" "}
+                {new Date(attendance.checkInTime).toLocaleTimeString()}
+              </p>
+
+              {attendance.latitude && attendance.longitude && (
+                <p>
+                  <strong>Location:</strong>{" "}
+                  {Number(attendance.latitude).toFixed(4)},{" "}
+                  {Number(attendance.longitude).toFixed(4)}
+                </p>
+              )}
+
+              {attendance.checkOutTime ? (
+                <p className="text-green-600 font-medium">
+                  ✅ Checked Out:{" "}
+                  {new Date(attendance.checkOutTime).toLocaleTimeString()}
+                </p>
+              ) : (
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white mt-2"
                   onClick={handleCheckOut}
@@ -113,4 +215,4 @@ export default function QuickCheckIn() {
       />
     </>
   )
-} 
+}
