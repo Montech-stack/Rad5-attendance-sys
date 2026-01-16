@@ -11,7 +11,7 @@ const CHECK_IN_URL = "https://attendance.bookbank.com.ng/api/v1/attendance/check
 const BUILDING_LOCATION = {
   latitude: 5.11883,
   longitude: 7.36927,
-  radius: 50, // meters
+  radius: 25, // meters
 };
 
 interface LocationCheckerModalProps {
