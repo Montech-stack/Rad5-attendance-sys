@@ -10,10 +10,10 @@ const CHECK_IN_URL = "https://attendance.bookbank.com.ng/api/v1/attendance/check
 // Building location (example: RAD5 headquarters)
 const BUILDING_LOCATION = {
   latitude: 5.11883,
-  longitude: 7.36927,
-  radius: 25, // meters
+  longitude: 7.36927,     
+  radius: 5, // meters
 };
-
+   
 interface LocationCheckerModalProps {
   isOpen: boolean;
   token: string; // Authorization token
