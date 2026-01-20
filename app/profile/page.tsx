@@ -49,17 +49,10 @@ export default function ProfilePage() {
       <DashboardHeader user={{ ...user, name: fullName }} />
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* RESPONSIVE LAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          
-          {/* LEFT SIDE ON DESKTOP / TOP ON MOBILE */}
-          <div className="lg:col-span-2 order-1 space-y-4 sm:space-y-6">
-            <QuickCheckIn user={{ ...user, name: fullName }} />
-            <AttendanceOverview user={{ ...user, name: fullName }} />
-          </div>
 
-          {/* RIGHT SIDE ON DESKTOP / BOTTOM ON MOBILE */}
-          <div className="lg:col-span-1 order-2">
+          {/* PROFILE CARD — TOP on mobile, RIGHT on desktop */}
+          <div className="order-1 lg:order-2 lg:col-span-1">
             <ProfileCard
               user={{
                 ...user,
@@ -68,6 +61,13 @@ export default function ProfilePage() {
               }}
             />
           </div>
+
+          {/* MAIN CONTENT — BELOW on mobile, LEFT on desktop */}
+          <div className="order-2 lg:order-1 lg:col-span-2 space-y-4 sm:space-y-6">
+            <QuickCheckIn user={{ ...user, name: fullName }} />
+            <AttendanceOverview user={{ ...user, name: fullName }} />
+          </div>
+
         </div>
       </div>
     </main>

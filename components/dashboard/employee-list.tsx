@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import AddUserForm from "./add-user-form";
 import {
   Select,
@@ -32,10 +32,19 @@ interface User {
   phone?: string;
 }
 
+interface Attendance {
+  id: string;
+  userId: string;
+  date: string;
+  checkInTime: string;
+  checkOutTime: string | null;
+  status: string;
+}
+
 interface EmployeeListProps {
   users: User[];
   userRole: string;
-  onRefresh?: () => void; // callback to refresh users from parent
+  onRefresh?: () => void;
 }
 
 export default function EmployeeList({
@@ -45,32 +54,73 @@ export default function EmployeeList({
 }: EmployeeListProps) {
   const [search, setSearch] = useState("");
   const [filteredUsers, setFilteredUsers] = useState<User[]>(users || []);
-  const [filterType, setFilterType] = useState<"all" | "student" | "staff">("all");
+  const [filterType, setFilterType] = useState<"all" | "student" | "staff">(
+    "all"
+  );
 
-  // Update filtered users when users or filter changes
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [attendanceMap, setAttendanceMap] = useState<
+    Record<string, Attendance[]>
+  >({});
+  const [loadingUser, setLoadingUser] = useState<string | null>(null);
+
+  const BASE_URL =
+    "https://attendance.bookbank.com.ng/api/v1/attendance/attendance/users";
+
+  // ---- FILTER + SEARCH LOGIC (your original behavior preserved) ----
   useEffect(() => {
     let updated = [...users];
 
-    // Filter by type
     if (filterType === "student") {
       updated = updated.filter((u) => u.trackId);
     } else if (filterType === "staff") {
       updated = updated.filter((u) => !u.trackId);
     }
 
-    // Apply search filter
     if (search.trim()) {
       updated = updated.filter(
         (user) =>
           `${user.firstName} ${user.lastName}`
             .toLowerCase()
             .includes(search.toLowerCase()) ||
-          (user.department?.toLowerCase() || "").includes(search.toLowerCase())
+          (user.department?.toLowerCase() || "").includes(
+            search.toLowerCase()
+          )
       );
     }
 
     setFilteredUsers(updated);
   }, [users, search, filterType]);
+
+  // ---- HANDLE EXPAND + FETCH ATTENDANCE ----
+  const handleExpand = async (userId: string) => {
+    // Close if clicking same user again
+    if (expandedUserId === userId) {
+      setExpandedUserId(null);
+      return;
+    }
+
+    setExpandedUserId(userId);
+
+    // If already fetched before, don't refetch
+    if (attendanceMap[userId]) return;
+
+    try {
+      setLoadingUser(userId);
+
+      const res = await fetch(`${BASE_URL}/${userId}`);
+      const data = await res.json();
+
+      setAttendanceMap((prev) => ({
+        ...prev,
+        [userId]: data.data || [],
+      }));
+    } catch (error) {
+      console.error("Failed to fetch attendance", error);
+    } finally {
+      setLoadingUser(null);
+    }
+  };
 
   return (
     <Card className="border-0 shadow-sm">
@@ -79,7 +129,7 @@ export default function EmployeeList({
           <div>
             <CardTitle>User Directory</CardTitle>
             <CardDescription>
-              Manage and track user attendance status
+              Click a user to view attendance history
             </CardDescription>
           </div>
           {userRole === "admin" && onRefresh && (
@@ -89,7 +139,7 @@ export default function EmployeeList({
       </CardHeader>
 
       <CardContent>
-        {/* Search + Filter */}
+        {/* SEARCH + FILTER */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -101,10 +151,11 @@ export default function EmployeeList({
             />
           </div>
 
-          {/* Filter dropdown */}
           <Select
             value={filterType}
-            onValueChange={(val) => setFilterType(val as "all" | "student" | "staff")}
+            onValueChange={(val) =>
+              setFilterType(val as "all" | "student" | "staff")
+            }
           >
             <SelectTrigger className="w-40 mt-2 sm:mt-0">
               <SelectValue placeholder="Filter by type" />
@@ -123,53 +174,111 @@ export default function EmployeeList({
           </p>
         ) : (
           <div className="space-y-3">
-            {filteredUsers.map((user) => (
-              <div
-                key={user.id}
-                className="p-4 border border-border rounded-lg hover:bg-muted transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-              >
-                {/* Left side: Name + email */}
-                <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                  {/* Name + status on mobile */}
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground">
-                      {user.firstName} {user.lastName}
-                    </span>
-                    <Badge
-                      className="sm:hidden"
-                      variant={
-                        user.status === "checked_in" ? "default" : "secondary"
-                      }
-                    >
-                      {user.status === "checked_in"
-                        ? "Checked In"
-                        : "Checked Out"}
-                    </Badge>
-                  </div>
+            {filteredUsers.map((user) => {
+              const isExpanded = expandedUserId === user.id;
+              const attendance = attendanceMap[user.id];
 
-                  {/* Email + role badge */}
-                  <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                    <span className="text-sm text-muted-foreground">{user.email}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                      {user.trackId ? "Student" : "Staff"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Right side: Status badge for desktop */}
-                <div className="hidden sm:flex-shrink-0 sm:flex sm:self-auto">
-                  <Badge
-                    variant={
-                      user.status === "checked_in" ? "default" : "secondary"
-                    }
+              return (
+                <div key={user.id}>
+                  {/* USER ROW */}
+                  <div
+                    onClick={() => handleExpand(user.id)}
+                    className="p-4 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                   >
-                    {user.status === "checked_in"
-                      ? "Checked In"
-                      : "Checked Out"}
-                  </Badge>
+                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">
+                          {user.firstName} {user.lastName}
+                        </span>
+
+                        <Badge
+                          className="sm:hidden"
+                          variant={
+                            user.status === "checked_in"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {user.status === "checked_in"
+                            ? "Checked In"
+                            : "Checked Out"}
+                        </Badge>
+
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                        <span className="text-sm text-muted-foreground">
+                          {user.email}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                          {user.trackId ? "Student" : "Staff"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="hidden sm:flex-shrink-0 sm:flex sm:self-auto">
+                      <Badge
+                        variant={
+                          user.status === "checked_in"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {user.status === "checked_in"
+                          ? "Checked In"
+                          : "Checked Out"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* EXPANDED ATTENDANCE PANEL */}
+                  {isExpanded && (
+                    <div className="ml-4 mt-2 p-4 border border-border rounded-lg bg-muted">
+                      {loadingUser === user.id ? (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading attendance...
+                        </div>
+                      ) : attendance && attendance.length > 0 ? (
+                        <div className="space-y-2">
+                          {attendance.map((att) => (
+                            <div
+                              key={att.id}
+                              className="text-sm flex justify-between border-b pb-2"
+                            >
+                              <span>{att.date}</span>
+                              <span>
+                                {new Date(
+                                  att.checkInTime
+                                ).toLocaleTimeString()}{" "}
+                                →
+                                {att.checkOutTime
+                                  ? new Date(
+                                      att.checkOutTime
+                                    ).toLocaleTimeString()
+                                  : "—"}
+                              </span>
+                              <span className="font-medium">
+                                {att.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No attendance records found.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

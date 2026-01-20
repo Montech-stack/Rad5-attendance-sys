@@ -70,6 +70,11 @@ export default function LocationCheckerModal({
           if (distance <= BUILDING_LOCATION.radius + accuracy) {
             try {
               // Send location to backend
+              // ---- CREATE AND LOG CHECK-IN TIME BEFORE SENDING ----
+              const loginTime = new Date().toString();
+              console.log("🕒 CHECK-IN TIME ABOUT TO BE SENT:", loginTime);
+
+              // Send location to backend
               const response = await fetch(CHECK_IN_URL, {
                 method: "POST",
                 headers: {
