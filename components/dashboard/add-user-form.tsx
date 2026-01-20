@@ -165,7 +165,6 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
           firstName,
           lastName,
           email,
-          password,
           roleId,
           trackId: isStudent ? trackId : undefined,
         }),

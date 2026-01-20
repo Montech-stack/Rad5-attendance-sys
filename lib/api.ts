@@ -17,8 +17,8 @@ export async function apiRequest(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "API request failed");
+    console.log(JSON.stringify(res,null,2));
+    throw new Error("API request failed");
   }
 
   return res.json();
