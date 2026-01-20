@@ -212,13 +212,6 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
             onChange={e => setEmail(e.target.value)}
           />
 
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-          />
-
           {/* ROLE SELECT */}
           <div className="flex gap-2">
             <Select value={roleId} onValueChange={setRoleId}>
