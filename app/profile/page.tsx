@@ -3,16 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardHeader from "@/components/dashboard/header";
-import ProfileCard from "@/components/profile/profile-card";
-import AttendanceOverview from "@/components/profile/attendance-overview";
-import QuickCheckIn from "@/components/profile/quick-check-in";
+import UserProfileContent from "@/components/profile/user-profile-content";
 
 interface User {
+  id: string; // Added ID
   email: string;
   firstName: string;
   lastName: string;
-  role: { name: string } | string; // Updated to handle both
+  role: { name: string } | string;
   trackId?: string | null;
+  [key: string]: any;
 }
 
 export default function ProfilePage() {
@@ -21,7 +21,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
-    
+
     if (!storedUser) {
       router.push("/");
       return;
@@ -29,11 +29,6 @@ export default function ProfilePage() {
 
     try {
       const parsedUser = JSON.parse(storedUser);
-      
-      // DEBUG LOGS to prevent future headache
-      console.log("🛠️ Parsed User:", parsedUser);
-      console.log("🛠️ Role Type:", typeof parsedUser.role);
-
       setUser(parsedUser);
     } catch (err) {
       console.error("❌ Failed to parse user from localStorage:", err);
@@ -43,37 +38,22 @@ export default function ProfilePage() {
 
   if (!user) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
-  // 1. Extract the role name safely (prevents the Object error)
-  const roleName = typeof user.role === 'object' ? user.role.name : user.role;
-  
-  // 2. Format the full name
-  const fullName = `${user.firstName} ${user.lastName}`;
-
-  // 3. Create a clean user object for children components
-  const cleanUser = {
+  // Construct a user object that satisfies DashboardHeader (needs 'name')
+  // and UserProfileContent (needs 'firstName', 'lastName', etc)
+  const userForHeader = {
     ...user,
-    name: fullName,
-    role: roleName // Now it's a string, not an object
+    name: `${user.firstName} ${user.lastName}`,
   };
 
   return (
-    <main className="min-h-screen bg-background">
-      {/* Passing cleanUser ensures children receive strings, not objects */}
-      <DashboardHeader user={cleanUser} />
+    <main className="min-h-screen bg-gray-50/50 dark:bg-background pb-12 relative">
+      {/* Decorative Gradient Background */}
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-purple-100/40 via-transparent to-blue-100/40 dark:from-purple-900/10 dark:to-blue-900/10" />
 
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          
-          <div className="order-1 lg:order-2 lg:col-span-1">
-            <ProfileCard user={cleanUser} />
-          </div>
+      <DashboardHeader user={userForHeader} />
 
-          <div className="order-2 lg:order-1 lg:col-span-2 space-y-4 sm:space-y-6">
-            <QuickCheckIn user={cleanUser} />
-            <AttendanceOverview user={cleanUser} />
-          </div>
-
-        </div>
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-10">
+        <UserProfileContent user={user} />
       </div>
     </main>
   );

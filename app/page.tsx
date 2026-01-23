@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { userLogin } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LogIn, Eye, EyeOff, MapPin } from "lucide-react";
+import ForgotPasswordDialog from "@/components/auth/forgot-password-dialog";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -42,14 +44,17 @@ export default function LoginPage() {
 
       // Determine role
       let role = "unknown";
-    
+
 
       // Redirect based on role
       if (role === "admin") router.push("/dashboard");
       else router.push("/profile");
 
     } catch (err: any) {
-      setError(err.message || "Login failed. Please check your credentials.");
+      console.error("Login Error:", err);
+      // Ensure we set a string error message, not an object
+      const errorMessage = err?.message || (typeof err === "string" ? err : "Login failed. Please check your credentials.");
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -59,12 +64,18 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-primary p-3 rounded-lg">
-              <MapPin className="w-8 h-8 text-primary-foreground" />
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative w-32 h-16">
+              <Image
+                src="/logo.png"
+                alt="RAD5 Tech Hub"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">RAD5</h1>
+          {/* Logo replaces the text header */}
           <p className="text-muted-foreground">Attendance System</p>
         </div>
 
@@ -109,6 +120,9 @@ export default function LoginPage() {
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
+                </div>
+                <div className="flex justify-end">
+                  <ForgotPasswordDialog />
                 </div>
               </div>
 

@@ -139,60 +139,82 @@ export default function QuickCheckIn() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Attendance</CardTitle>
+      <Card className="border-0 shadow-lg bg-card/80 backdrop-blur overflow-hidden">
+        <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+            Today's Actions
+          </CardTitle>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pt-6">
           {!attendance ? (
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-              onClick={() => setOpen(true)}
-            >
-              Check In
-            </Button>
-          ) : (
-            <div className="text-sm space-y-2">
-              <p>
-                <strong>Status:</strong>{" "}
-                <span
-                  className={
-                    attendance.status === "LATE"
-                      ? "text-red-500"
-                      : "text-green-600"
-                  }
+            <div className="flex flex-col items-center justify-center py-6 space-y-6">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-purple-600 blur-2xl opacity-30 animate-pulse rounded-full group-hover:opacity-50 transition-opacity duration-500 pointer-events-none" />
+                <Button
+                  className="relative z-10 w-48 h-48 rounded-full border-[6px] border-white dark:border-blue-950 bg-gradient-to-tr from-blue-700 via-indigo-600 to-purple-700 hover:from-blue-600 hover:via-indigo-500 hover:to-purple-600 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 flex flex-col gap-3 items-center justify-center cursor-pointer"
+                  onClick={() => {
+                    console.log("Check In Button Clicked");
+                    setOpen(true);
+                  }}
                 >
-                  {attendance.status}
-                </span>
+                  <span className="text-5xl filter drop-shadow-md">👋</span>
+                  <span className="font-extrabold text-xl tracking-widest uppercase text-shadow-sm">Check In</span>
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground font-medium text-center max-w-[200px]">
+                Start your day by tapping the button above.
               </p>
-
-              <p>
-                <strong>Check-In:</strong>{" "}
-                {new Date(attendance.checkInTime).toLocaleTimeString()}
-              </p>
-
-              {attendance.latitude && attendance.longitude && (
-                <p>
-                  <strong>Location:</strong>{" "}
-                  {Number(attendance.latitude).toFixed(4)},{" "}
-                  {Number(attendance.longitude).toFixed(4)}
-                </p>
-              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="bg-secondary/30 rounded-2xl p-4 flex items-center justify-between border border-border/50">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current Status</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`h-2.5 w-2.5 rounded-full ${attendance.status === "LATE" ? "bg-amber-500" : "bg-purple-500"} animate-pulse`} />
+                    <span className={`text-xl font-bold ${attendance.status === "LATE" ? "text-amber-600" : "text-purple-600"}`}>
+                      {attendance.status}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Check-In Time</span>
+                  <p className="text-xl font-mono font-medium text-foreground">
+                    {new Date(attendance.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
 
               {attendance.checkOutTime ? (
-                <p className="text-green-600 font-medium">
-                  ✅ Checked Out:{" "}
-                  {new Date(attendance.checkOutTime).toLocaleTimeString()}
-                </p>
+                <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-center space-y-1">
+                  <p className="text-purple-700 dark:text-purple-400 font-bold text-lg flex items-center justify-center gap-2">
+                    ✅ Checked Out
+                  </p>
+                  <p className="text-sm text-purple-600/80 font-mono">
+                    {new Date(attendance.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
               ) : (
                 <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white mt-2 cursor-pointer"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg hover:shadow-xl transition-all h-12 text-lg font-semibold tracking-wide"
                   onClick={handleCheckOut}
                   disabled={checkingOut}
                 >
-                  {checkingOut ? "Checking Out..." : "Check Out"}
+                  {checkingOut ? (
+                    <span className="flex items-center gap-2">Checking Out...</span>
+                  ) : (
+                    <span className="flex items-center gap-2">Running off? Check Out 🏃</span>
+                  )}
                 </Button>
+              )}
+
+              {attendance.latitude && (
+                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground opacity-70">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span>Location Verified: {Number(attendance.latitude).toFixed(4)}, {Number(attendance.longitude).toFixed(4)}</span>
+                </div>
               )}
             </div>
           )}
