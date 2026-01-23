@@ -11,7 +11,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: { name: string } | string; // Updated to handle both
   trackId?: string | null;
 }
 
@@ -21,51 +21,56 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
+    
     if (!storedUser) {
       router.push("/");
       return;
     }
 
     try {
-      const parsedUser: User = JSON.parse(storedUser);
+      const parsedUser = JSON.parse(storedUser);
+      
+      // DEBUG LOGS to prevent future headache
+      console.log("🛠️ Parsed User:", parsedUser);
+      console.log("🛠️ Role Type:", typeof parsedUser.role);
+
       setUser(parsedUser);
     } catch (err) {
-      console.error("Failed to parse user from localStorage:", err);
+      console.error("❌ Failed to parse user from localStorage:", err);
       router.push("/");
     }
   }, [router]);
 
-  if (!user)
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    );
+  if (!user) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
+  // 1. Extract the role name safely (prevents the Object error)
+  const roleName = typeof user.role === 'object' ? user.role.name : user.role;
+  
+  // 2. Format the full name
   const fullName = `${user.firstName} ${user.lastName}`;
+
+  // 3. Create a clean user object for children components
+  const cleanUser = {
+    ...user,
+    name: fullName,
+    role: roleName // Now it's a string, not an object
+  };
 
   return (
     <main className="min-h-screen bg-background">
-      <DashboardHeader user={{ ...user, name: fullName }} />
+      {/* Passing cleanUser ensures children receive strings, not objects */}
+      <DashboardHeader user={cleanUser} />
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-
-          {/* PROFILE CARD — TOP on mobile, RIGHT on desktop */}
+          
           <div className="order-1 lg:order-2 lg:col-span-1">
-            <ProfileCard
-              user={{
-                ...user,
-                name: fullName,
-                trackId: user.trackId ?? null,
-              }}
-            />
+            <ProfileCard user={cleanUser} />
           </div>
 
-          {/* MAIN CONTENT — BELOW on mobile, LEFT on desktop */}
           <div className="order-2 lg:order-1 lg:col-span-2 space-y-4 sm:space-y-6">
-            <QuickCheckIn user={{ ...user, name: fullName }} />
-            <AttendanceOverview user={{ ...user, name: fullName }} />
+            <QuickCheckIn user={cleanUser} />
+            <AttendanceOverview user={cleanUser} />
           </div>
 
         </div>

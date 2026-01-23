@@ -85,9 +85,11 @@ export default function DashboardPage() {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
+  const fullName = `${user.firstName} ${user.lastName}`;
+
   return (
     <main className="min-h-screen bg-background">
-      <DashboardHeader user={user} />
+      <DashboardHeader user={{ name: fullName, role: user.role }} />
       <div className="container mx-auto px-4 py-8 space-y-8">
         <QuickStats users={users} attendance={attendance} />
         <EmployeeList

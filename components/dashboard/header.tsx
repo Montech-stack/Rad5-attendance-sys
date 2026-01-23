@@ -8,7 +8,8 @@ import { useState, useEffect, useRef } from "react";
 interface DashboardHeaderProps {
   user: {
     name: string;
-    role: string;
+    // We allow string or object here to prevent the 'React Child' crash
+    role: string | { name: string }; 
   };
 }
 
@@ -17,12 +18,14 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Helper to ensure we are always rendering a string
+  const displayRole = typeof user.role === "object" ? user.role.name : user.role;
+
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
     router.push("/");
   };
 
-  // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -36,7 +39,6 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        {/* Logo / Brand */}
         <div className="flex items-center gap-3">
           <div className="bg-primary p-2 rounded-lg">
             <MapPin className="w-6 h-6 text-primary-foreground" />
@@ -51,7 +53,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
         <div className="hidden md:flex items-center gap-4">
           <div className="text-right">
             <p className="text-sm font-medium text-foreground">{user.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+            {/* FIXED: Use displayRole instead of user.role */}
+            <p className="text-xs text-muted-foreground capitalize">{displayRole}</p>
           </div>
           <Button
             variant="outline"
@@ -64,7 +67,6 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           </Button>
         </div>
 
-        {/* Mobile menu button */}
         <button
           className="md:hidden p-2 rounded-md border border-border"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -79,13 +81,12 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           ref={menuRef}
           className="md:hidden fixed top-[70px] left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-sm bg-card border border-border rounded-lg shadow-lg p-4 space-y-3"
         >
-          {/* User info */}
           <div className="text-center pb-3 border-b border-border">
             <p className="text-sm font-medium text-foreground">{user.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+            {/* FIXED: Use displayRole instead of user.role */}
+            <p className="text-xs text-muted-foreground capitalize">{displayRole}</p>
           </div>
 
-          {/* Logout button */}
           <Button
             variant="outline"
             size="sm"
