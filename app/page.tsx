@@ -105,7 +105,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -114,7 +114,7 @@ export default function LoginPage() {
 
               {error && <div className="p-3 bg-destructive/10 border border-destructive/50 rounded text-sm text-destructive">{error}</div>}
 
-              <Button type="submit" className="w-full" disabled={loading} size="lg">
+              <Button type="submit" className="w-full cursor-pointer" disabled={loading} size="lg">
                 {loading ? (
                   <span className="flex items-center gap-2"><span className="animate-spin">⏳</span> Signing in...</span>
                 ) : (

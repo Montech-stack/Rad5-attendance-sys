@@ -147,7 +147,7 @@ export default function QuickCheckIn() {
         <CardContent>
           {!attendance ? (
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
               onClick={() => setOpen(true)}
             >
               Check In
@@ -187,7 +187,7 @@ export default function QuickCheckIn() {
                 </p>
               ) : (
                 <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white mt-2"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white mt-2 cursor-pointer"
                   onClick={handleCheckOut}
                   disabled={checkingOut}
                 >

@@ -60,7 +60,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
             variant="outline"
             size="sm"
             onClick={handleLogout}
-            className="gap-2 bg-transparent"
+            className="gap-2 bg-transparent cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             Logout
@@ -91,7 +91,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
             variant="outline"
             size="sm"
             onClick={handleLogout}
-            className="w-full gap-2 bg-transparent"
+            className="w-full gap-2 bg-transparent cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             Logout

@@ -57,11 +57,11 @@ export default function AttendanceOverview({ user }: AttendanceOverviewProps) {
           }));
           setAttendance(formattedData);
         } else {
-          setError("Failed to fetch attendance.");
+          setError(error);
         }
       } catch (err) {
         console.error(err);
-        setError("An error occurred while fetching attendance.");
+        setError(error);
       } finally {
         setLoading(false);
       }

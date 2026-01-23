@@ -88,7 +88,7 @@ export default function ProfileCard({ user }: { user: UserProfile }) {
               </tbody>
             </table>
 
-            <Button className="w-full mt-4" onClick={() => setIsEditing(true)}>
+            <Button className="w-full mt-4 cursor-pointer"  onClick={() => setIsEditing(true)}>
               Edit Profile
             </Button>
           </div>
@@ -114,12 +114,12 @@ export default function ProfileCard({ user }: { user: UserProfile }) {
             </div>
 
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={handleSave}>
+              <Button className="flex-1 cursor-pointer" onClick={handleSave}>
                 Save Changes
               </Button>
               <Button
                 variant="outline"
-                className="flex-1"
+                className="flex-1 cursor-pointer"
                 onClick={() => setIsEditing(false)}
               >
                 Cancel
