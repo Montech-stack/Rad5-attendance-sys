@@ -17,19 +17,21 @@ interface QuickStatsProps {
   users: any[];
   attendance: any[];
   stats?: any;
-  onFilterChange?: (filter: "all" | "student" | "staff" | "checked_in" | "late" | "absent") => void;
+  onFilterChange?: (filter: "all" | "student" | "staff" | "checked_in" | "on_time" | "late" | "absent") => void;
 }
 
 export default function QuickStats({ users, attendance, stats, onFilterChange }: QuickStatsProps) {
   // Use backend stats if available, otherwise fallback to local calculation
-  const totalStaff = stats ? stats.totalStaff : users.filter(u => !u.trackId).length;
+  const totalStaff = (stats ? stats.totalStaff : users.filter(u => !u.trackId).length) || 0;
   // If stats.totalStudents is 0 but we have users, it might be a data sync issue. 
   // Trusted source -> stats (backend), fallback -> users
-  const totalStudents = stats ? stats.totalStudents : users.filter(u => !!u.trackId).length;
+  const totalStudents = (stats ? stats.totalStudents : users.filter(u => !!u.trackId).length) || 0;
 
-  const checkedIn = stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in").length;
-  const onTime = stats ? stats.onTimeLast7Days : attendance.filter(a => a.status === "checked_in" && !a.isLate).length;
-  const lateArrivals = stats ? stats.lateLast7Days : attendance.filter(a => a.status === "checked_in" && a.isLate).length;
+  const checkedIn = (stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in").length) || 0;
+  // Improved logic: Check for "late" string regardless of casing
+  const lateArrivals = (stats ? stats.lateLast7Days : attendance.filter(a => a.status && a.status.toLowerCase().includes("late")).length) || 0;
+  // On Time is simply Checked In minus Late (assuming all checked in are either on time or late)
+  const onTime = (stats ? stats.onTimeLast7Days : Math.max(0, attendance.filter(a => a.status === "checked_in" || (a.status && a.status.toLowerCase().includes("present"))).length - lateArrivals)) || 0;
 
   // Calculate Absent: Total Users (Staff + Students) - Checked In
   const totalUsers = totalStaff + totalStudents;
@@ -69,7 +71,7 @@ export default function QuickStats({ users, attendance, stats, onFilterChange }:
       icon: CheckCircle2,
       trend: { value: 5, label: "vs yesterday", positive: true },
       gradient: "from-teal-500/10 to-teal-500/5 border-teal-200/50 dark:border-teal-800/50",
-      filterType: "checked_in",
+      filterType: "on_time",
     },
     {
       title: "Late Arrivals",

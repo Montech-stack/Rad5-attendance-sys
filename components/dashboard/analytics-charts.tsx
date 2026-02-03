@@ -30,7 +30,7 @@ export default function AnalyticsCharts({ attendance, users, history = [] }: Ana
             );
 
             const present = records.length;
-            const late = records.filter((r: any) => r.status?.toLowerCase().includes("late")).length;
+            const late = records.filter((r: any) => r.status && r.status.toLowerCase().includes("late")).length;
             const absent = Math.max(0, users.length - present);
 
             days.push({ day: dayName, present, late, absent });

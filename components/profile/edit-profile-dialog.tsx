@@ -32,7 +32,7 @@ export default function EditProfileDialog({
     const [formData, setFormData] = useState({
         firstName: user?.firstName || "",
         lastName: user?.lastName || "",
-        phone: user?.phone || "",
+        email: user?.email || "",
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,18 +44,15 @@ export default function EditProfileDialog({
         setLoading(true);
 
         try {
-            // NOTE: Adjust endpoint if specific profile update endpoint exists.
-            // Assuming a generic update or re-using user update endpoint.
-            // If no specific endpoint, we might just update local storage for demo purposes
-            // effectively waiting for real backend implementation.
+            // Using correct endpoint inferred from user request
+            await apiRequest("/users/edit-user", {
+                method: "PUT",
+                body: JSON.stringify(formData)
+            });
 
-            // Attempting API call (mocked path usually /users/profile or similar)
-            // await apiRequest("/users/profile", { method: "PUT", body: JSON.stringify(formData) });
-
-            // Since specific endpoint isn't documented, we'll update localStorage to reflect changes immediately
-            // and simulate a success.
-
+            // Update local storage to reflect changes immediately
             const currentUserStr = localStorage.getItem("currentUser");
+            // Merge existing user data with new form data
             let updatedUser = { ...user, ...formData };
 
             if (currentUserStr) {
@@ -68,9 +65,9 @@ export default function EditProfileDialog({
             toast.success("Profile updated successfully");
             onOpenChange(false);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Failed to update profile");
+            toast.error(error.response?.data?.message || "Failed to update profile");
         } finally {
             setLoading(false);
         }
@@ -111,16 +108,17 @@ export default function EditProfileDialog({
                         />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="phone" className="text-right">
-                            Phone
+                        <Label htmlFor="email" className="text-right">
+                            Email
                         </Label>
                         <Input
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
                             onChange={handleChange}
                             className="col-span-3"
-                            placeholder="+234..."
+                            placeholder="john@example.com"
                         />
                     </div>
                     <DialogFooter>

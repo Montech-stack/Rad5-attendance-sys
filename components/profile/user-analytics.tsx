@@ -20,7 +20,8 @@ export default function UserAnalytics({ user, attendance = [] }: UserAnalyticsPr
             const s = record.status ? record.status.toLowerCase() : "";
             if (s.includes("late")) {
                 late++;
-            } else if (s.includes("on-time") || s.includes("checked_in")) {
+            } else {
+                // If record exists and is not late, count as on-time
                 onTime++;
             }
         });

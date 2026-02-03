@@ -31,7 +31,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null); // New stats state
   const [loading, setLoading] = useState(false);
   // Add state for filtering
-  const [currentFilter, setCurrentFilter] = useState<"all" | "student" | "staff" | "checked_in" | "late" | "absent">("all");
+  const [currentFilter, setCurrentFilter] = useState<"all" | "student" | "staff" | "checked_in" | "on_time" | "late" | "absent">("all");
   const router = useRouter();
 
   // ---------------------

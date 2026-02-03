@@ -52,7 +52,7 @@ interface EmployeeListProps {
   users: User[];
   userRole: string;
   onRefresh?: () => void;
-  initialFilter?: "all" | "student" | "staff" | "checked_in" | "late" | "absent";
+  initialFilter?: "all" | "student" | "staff" | "checked_in" | "on_time" | "late" | "absent";
 }
 
 export default function EmployeeList({
@@ -110,6 +110,10 @@ export default function EmployeeList({
     } else if (filterType === "staff") {
       updated = updated.filter((u) => !u.trackId);
     } else if (filterType === "checked_in") {
+      // Checked in means they are present (either on time or late)
+      updated = updated.filter(u => u.status === "checked_in" || u.status === "late");
+    } else if (filterType === "on_time") {
+      // Strictly on time
       updated = updated.filter(u => u.status === "checked_in");
     } else if (filterType === "late") {
       updated = updated.filter(u => u.status === "late");
@@ -201,6 +205,7 @@ export default function EmployeeList({
                 <SelectItem value="student">Students</SelectItem>
                 <SelectItem value="staff">Staff</SelectItem>
                 <SelectItem value="checked_in">Checked In</SelectItem>
+                <SelectItem value="on_time">On Time</SelectItem>
                 <SelectItem value="late">Late</SelectItem>
                 <SelectItem value="absent">Absent</SelectItem>
               </SelectContent>

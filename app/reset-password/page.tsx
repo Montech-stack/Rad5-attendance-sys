@@ -32,7 +32,7 @@ function ResetPasswordForm() {
         }
 
         try {
-            // Assuming typical endpoint
+            // Confirmed endpoint from user context
             await apiRequest("/users/reset-password", {
                 method: "POST",
                 body: JSON.stringify({ token, password }),
