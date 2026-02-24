@@ -148,6 +148,18 @@ export default function DashboardPage() {
     return { ...u, status };
   });
 
+  // ---------------------
+  // Calculate specific stats from derived users for consistency
+  // ---------------------
+  const calculatedStats = {
+    totalStaff: derivedUsers.filter(u => !u.trackId).length,
+    totalStudents: derivedUsers.filter(u => !!u.trackId).length,
+    checkedIn: derivedUsers.filter(u => u.status === "checked_in" || u.status === "late").length,
+    onTime: derivedUsers.filter(u => u.status === "checked_in").length,
+    lateArrivals: derivedUsers.filter(u => u.status === "late").length,
+    absent: derivedUsers.filter(u => u.status === "absent" || !u.status).length
+  };
+
   return (
     <main className="min-h-screen bg-background pb-12">
       <DashboardHeader user={{ name: fullName, role: roleProp, firstName: user.firstName, lastName: user.lastName }} />
@@ -174,6 +186,7 @@ export default function DashboardPage() {
             users={users}
             attendance={attendance}
             stats={stats}
+            calculatedStats={calculatedStats}
             onFilterChange={(filter) => {
               document.getElementById('employee-list-section')?.scrollIntoView({ behavior: 'smooth' });
               setCurrentFilter(filter);
@@ -185,6 +198,7 @@ export default function DashboardPage() {
             history={history}
             users={users}
             stats={stats}
+            calculatedStats={calculatedStats}
             onStatusSelect={(status) => {
               // set filter and scroll to employee list
               setCurrentFilter(status as any);

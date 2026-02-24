@@ -9,10 +9,18 @@ interface AnalyticsChartsProps {
     users: any[];
     history?: any[];
     stats?: any;
+    calculatedStats?: {
+        totalStaff: number;
+        totalStudents: number;
+        checkedIn: number;
+        onTime: number;
+        lateArrivals: number;
+        absent: number;
+    };
     onStatusSelect?: (status: "on_time" | "late" | "absent") => void;
 }
 
-export default function AnalyticsCharts({ attendance, users, history = [], stats, onStatusSelect }: AnalyticsChartsProps) {
+export default function AnalyticsCharts({ attendance, users, history = [], stats, calculatedStats, onStatusSelect }: AnalyticsChartsProps) {
 
     // ----------------------------------------
     // 1. Calculate Weekly Trends (Area Chart)
@@ -43,17 +51,21 @@ export default function AnalyticsCharts({ attendance, users, history = [], stats
     // ----------------------------------------
     // 2. Calculate Today's Status (Pie Chart)
     // ----------------------------------------
-    // Prefer backend `stats` when available for totals; attendance array is still used
-    // to determine today's late/on-time breakdown since it's the per-record source.
-    const totalCheckIns = typeof stats?.checkedInToday === "number" ? stats.checkedInToday : attendance.length;
-    const totalUsers = typeof stats?.totalStaff === "number" || typeof stats?.totalStudents === "number"
-        ? (Number(stats?.totalStaff || 0) + Number(stats?.totalStudents || 0))
-        : users.length;
+    // Prefer calculatedStats (frontend derived) for consistency, then backend `stats`, then fallback
+    const totalCheckIns = calculatedStats ? calculatedStats.checkedIn : (typeof stats?.checkedInToday === "number" ? stats.checkedInToday : attendance.length);
+    
+    const totalUsers = calculatedStats 
+        ? (calculatedStats.totalStaff + calculatedStats.totalStudents) 
+        : (typeof stats?.totalStaff === "number" || typeof stats?.totalStudents === "number"
+            ? (Number(stats?.totalStaff || 0) + Number(stats?.totalStudents || 0))
+            : users.length);
 
     // late must be computed from today's attendance records
-    const lateCheckIns = attendance.filter((a) => a.status?.toLowerCase().includes("late")).length;
-    const onTimeCheckIns = Math.max(0, totalCheckIns - lateCheckIns);
-    const absentCount = Math.max(0, totalUsers - totalCheckIns);
+    const lateCheckIns = calculatedStats ? calculatedStats.lateArrivals : attendance.filter((a) => a.status?.toLowerCase().includes("late")).length;
+    
+    const onTimeCheckIns = calculatedStats ? calculatedStats.onTime : Math.max(0, totalCheckIns - lateCheckIns);
+    
+    const absentCount = calculatedStats ? calculatedStats.absent : Math.max(0, totalUsers - totalCheckIns);
 
     // Colorful Palette
     const attendanceStatus = [

@@ -17,25 +17,33 @@ interface QuickStatsProps {
   users: any[];
   attendance: any[];
   stats?: any;
+  calculatedStats?: {
+    totalStaff: number;
+    totalStudents: number;
+    checkedIn: number;
+    onTime: number;
+    lateArrivals: number;
+    absent: number;
+  };
   onFilterChange?: (filter: "all" | "student" | "staff" | "checked_in" | "on_time" | "late" | "absent") => void;
 }
 
-export default function QuickStats({ users, attendance, stats, onFilterChange }: QuickStatsProps) {
-  // Use backend stats if available, otherwise fallback to local calculation
-  const totalStaff = (stats ? stats.totalStaff : users.filter(u => !u.trackId).length) || 0;
-  // If stats.totalStudents is 0 but we have users, it might be a data sync issue. 
-  // Trusted source -> stats (backend), fallback -> users
-  const totalStudents = (stats ? stats.totalStudents : users.filter(u => !!u.trackId).length) || 0;
+export default function QuickStats({ users, attendance, stats, calculatedStats, onFilterChange }: QuickStatsProps) {
+  // Use calculated stats if available (most accurate from frontend derived state), 
+  // otherwise fallback to backend stats or local calculation
+  
+  const totalStaff = calculatedStats ? calculatedStats.totalStaff : ((stats ? stats.totalStaff : users.filter(u => !u.trackId).length) || 0);
+  const totalStudents = calculatedStats ? calculatedStats.totalStudents : ((stats ? stats.totalStudents : users.filter(u => !!u.trackId).length) || 0);
 
-  const checkedIn = (stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in").length) || 0;
-  // Improved logic: Check for "late" string regardless of casing
-  const lateArrivals = (stats ? stats.lateLast7Days : attendance.filter(a => a.status && a.status.toLowerCase().includes("late")).length) || 0;
-  // On Time is simply Checked In minus Late (assuming all checked in are either on time or late)
-  const onTime = (stats ? stats.onTimeLast7Days : Math.max(0, attendance.filter(a => a.status === "checked_in" || (a.status && a.status.toLowerCase().includes("present"))).length - lateArrivals)) || 0;
+  const checkedIn = calculatedStats ? calculatedStats.checkedIn : ((stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in" || a.status?.toLowerCase().includes("late")).length) || 0);
+  
+  const lateArrivals = calculatedStats ? calculatedStats.lateArrivals : attendance.filter(a => a.status && a.status.toLowerCase().includes("late")).length;
+  
+  const onTime = calculatedStats ? calculatedStats.onTime : Math.max(0, checkedIn - lateArrivals);
 
-  // Calculate Absent: Total Users (Staff + Students) - Checked In
+  // Calculate Absent
   const totalUsers = totalStaff + totalStudents;
-  const absentCount = totalUsers - checkedIn;
+  const absentCount = calculatedStats ? calculatedStats.absent : (totalUsers - checkedIn);
 
   const statCards: Stat[] = [
     {
