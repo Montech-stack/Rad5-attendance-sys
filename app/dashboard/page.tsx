@@ -184,6 +184,7 @@ export default function DashboardPage() {
             attendance={attendance}
             history={history}
             users={users}
+            stats={stats}
             onStatusSelect={(status) => {
               // set filter and scroll to employee list
               setCurrentFilter(status as any);
