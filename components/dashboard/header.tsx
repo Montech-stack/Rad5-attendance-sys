@@ -3,10 +3,9 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { MapPin, LogOut, Menu, UserCog } from "lucide-react";
+import { MapPin, LogOut, Menu } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { getUserRoleLabel } from "@/lib/user-helpers";
-import EditProfileDialog from "@/components/profile/edit-profile-dialog";
 
 interface DashboardHeaderProps {
   user: {
@@ -21,7 +20,7 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({ user: initialUser }: DashboardHeaderProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  
   const [user, setUser] = useState(initialUser);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -80,15 +79,7 @@ export default function DashboardHeader({ user: initialUser }: DashboardHeaderPr
               </p>
             </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setEditProfileOpen(true)}
-              title="Edit Profile"
-              className="text-muted-foreground hover:text-primary"
-            >
-              <UserCog className="w-5 h-5" />
-            </Button>
+            {/* Edit profile removed per request */}
 
             <Button
               variant="outline"
@@ -122,18 +113,7 @@ export default function DashboardHeader({ user: initialUser }: DashboardHeaderPr
               <p className="text-xs text-muted-foreground">{displayRole}</p>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setEditProfileOpen(true);
-                setMobileMenuOpen(false);
-              }}
-              className="w-full gap-2 justify-start"
-            >
-              <UserCog className="w-4 h-4" />
-              Edit Profile
-            </Button>
+            {/* Edit profile removed for mobile menu */}
 
             <Button
               variant="outline"
@@ -148,12 +128,7 @@ export default function DashboardHeader({ user: initialUser }: DashboardHeaderPr
         )}
       </header>
 
-      <EditProfileDialog
-        user={user}
-        open={editProfileOpen}
-        onOpenChange={setEditProfileOpen}
-        onUserUpdated={onUserUpdated}
-      />
+      {/* EditProfileDialog removed */}
     </>
   );
 }

@@ -180,7 +180,16 @@ export default function DashboardPage() {
             }}
           />
 
-          <AnalyticsCharts attendance={attendance} history={history} users={users} />
+          <AnalyticsCharts
+            attendance={attendance}
+            history={history}
+            users={users}
+            onStatusSelect={(status) => {
+              // set filter and scroll to employee list
+              setCurrentFilter(status as any);
+              document.getElementById('employee-list-section')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          />
         </div>
 
         {/* Data Management Layer */}

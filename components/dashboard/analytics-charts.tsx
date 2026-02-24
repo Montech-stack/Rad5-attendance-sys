@@ -8,9 +8,10 @@ interface AnalyticsChartsProps {
     attendance: any[];
     users: any[];
     history?: any[];
+    onStatusSelect?: (status: "on_time" | "late" | "absent") => void;
 }
 
-export default function AnalyticsCharts({ attendance, users, history = [] }: AnalyticsChartsProps) {
+export default function AnalyticsCharts({ attendance, users, history = [], onStatusSelect }: AnalyticsChartsProps) {
 
     // ----------------------------------------
     // 1. Calculate Weekly Trends (Area Chart)
@@ -124,11 +125,20 @@ export default function AnalyticsCharts({ attendance, users, history = [] }: Ana
                                         stroke="none"
                                         animationDuration={1500}
                                         animationBegin={200}
-                                    >
-                                        {attendanceStatus.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
+                                        >
+                                            {attendanceStatus.map((entry, index) => {
+                                                // map display name to internal filter key
+                                                const key = entry.name.toLowerCase().includes("on") ? "on_time" : entry.name.toLowerCase();
+                                                return (
+                                                    <Cell
+                                                        key={`cell-${index}`}
+                                                        fill={entry.color}
+                                                        style={{ cursor: onStatusSelect ? 'pointer' : 'default' }}
+                                                        onClick={() => onStatusSelect && onStatusSelect(key as any)}
+                                                    />
+                                                );
+                                            })}
+                                        </Pie>
                                     <Tooltip
                                         contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
                                     />
@@ -150,15 +160,22 @@ export default function AnalyticsCharts({ attendance, users, history = [] }: Ana
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 mt-4">
-                        {attendanceStatus.map((status) => (
-                            <div key={status.name} className="flex flex-col items-center p-2 rounded-lg bg-secondary/30">
-                                <div className="flex items-center gap-1.5 mb-1">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }} />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{status.name}</span>
+                        {attendanceStatus.map((status) => {
+                            const key = status.name.toLowerCase().includes("on") ? "on_time" : status.name.toLowerCase();
+                            return (
+                                <div
+                                    key={status.name}
+                                    className="flex flex-col items-center p-2 rounded-lg bg-secondary/30 cursor-pointer hover:shadow"
+                                    onClick={() => onStatusSelect && onStatusSelect(key as any)}
+                                >
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }} />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{status.name}</span>
+                                    </div>
+                                    <span className="text-lg font-bold" style={{ color: status.color }}>{status.value}</span>
                                 </div>
-                                <span className="text-lg font-bold" style={{ color: status.color }}>{status.value}</span>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>
