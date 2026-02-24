@@ -3,6 +3,16 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import LocationCheckerModal from "@/components/check-in/location-checker-modal"
 
 const CHECK_OUT_URL =
@@ -26,6 +36,7 @@ export default function QuickCheckIn() {
   const [open, setOpen] = useState(false)
   const [attendance, setAttendance] = useState<Attendance | null>(null)
   const [checkingOut, setCheckingOut] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const token = localStorage.getItem("token") || ""
@@ -197,17 +208,43 @@ export default function QuickCheckIn() {
                   </p>
                 </div>
               ) : (
-                <Button
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg hover:shadow-xl transition-all h-12 text-lg font-semibold tracking-wide"
-                  onClick={handleCheckOut}
-                  disabled={checkingOut}
-                >
-                  {checkingOut ? (
-                    <span className="flex items-center gap-2">Checking Out...</span>
-                  ) : (
-                    <span className="flex items-center gap-2">Running off? Check Out 🏃</span>
-                  )}
-                </Button>
+                <>
+                  <Button
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg hover:shadow-xl transition-all h-12 text-lg font-semibold tracking-wide"
+                    onClick={() => setConfirmOpen(true)}
+                    disabled={checkingOut}
+                  >
+                    {checkingOut ? (
+                      <span className="flex items-center gap-2">Checking Out...</span>
+                    ) : (
+                      <span className="flex items-center gap-2">Running off? Check Out 🏃</span>
+                    )}
+                  </Button>
+
+                  <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Check-Out</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to check out now? This will record your check-out time.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setConfirmOpen(false)}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            setConfirmOpen(false)
+                            await handleCheckOut()
+                          }}
+                        >
+                          {checkingOut ? "Checking Out..." : "Confirm"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
               )}
 
               {attendance.latitude && (
