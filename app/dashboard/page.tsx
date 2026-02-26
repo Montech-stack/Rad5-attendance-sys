@@ -139,17 +139,25 @@ export default function DashboardPage() {
   // Derive Users with Status
   // ---------------------
   const derivedUsers = users.map(u => {
-    // Try to find attendance record using multiple possible ID fields
+    const userId = String(u.id);
+
+    // Try to find attendance record using multiple possible ID fields with loose equality/string conversion
     const record = attendance.find(a => 
-      (a.userId === u.id) || 
-      (a.user_id === u.id) || 
-      (a.user && a.user.id === u.id)
+      (String(a.userId) === userId) || 
+      (String(a.user_id) === userId) || 
+      (String(a.employeeId) === userId) ||
+      (String(a.studentId) === userId) ||
+      (a.user && String(a.user.id) === userId) ||
+      // Fallback: check if user object is nested directly without an ID property key match
+      (a.id === userId)
     );
 
     let status: "checked_in" | "checked_out" | "late" | "absent" = "absent";
 
     if (record) {
-      const s = record.status ? record.status.toLowerCase() : "";
+      // Prioritize explicit status field
+      const s = record.status ? String(record.status).toLowerCase() : "";
+      
       if (s.includes("late")) {
         status = "late";
       } else if (s.includes("checked_in") || s.includes("present") || s === "on_time") {
@@ -157,7 +165,7 @@ export default function DashboardPage() {
       } else if (s.includes("checked_out")) {
         status = "checked_out";
       } else {
-         // If a record exists for today but status is ambiguous, assume present/checked_in
+         // If a record exists for today, assume they are checked in unless explicitly checked out
          status = "checked_in";
       }
     }

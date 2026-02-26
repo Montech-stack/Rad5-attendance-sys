@@ -32,18 +32,21 @@ export default function QuickStats({ users, attendance, stats, calculatedStats, 
   // Use calculated stats if available (most accurate from frontend derived state), 
   // otherwise fallback to backend stats or local calculation
   
-  const totalStaff = calculatedStats ? calculatedStats.totalStaff : ((stats ? stats.totalStaff : users.filter(u => !u.trackId).length) || 0);
-  const totalStudents = calculatedStats ? calculatedStats.totalStudents : ((stats ? stats.totalStudents : users.filter(u => !!u.trackId).length) || 0);
+  // Prefer Backend Stats for aggregate counts if frontend calculation seems empty/suspicious (e.g., matching failed)
+  const useBackendStats = stats && (!calculatedStats || calculatedStats.checkedIn === 0) && stats.checkedInToday > 0;
 
-  const checkedIn = calculatedStats ? calculatedStats.checkedIn : ((stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in" || a.status?.toLowerCase().includes("late")).length) || 0);
+  const totalStaff = useBackendStats ? stats.totalStaff : (calculatedStats ? calculatedStats.totalStaff : ((stats ? stats.totalStaff : users.filter(u => !u.trackId).length) || 0));
+  const totalStudents = useBackendStats ? stats.totalStudents : (calculatedStats ? calculatedStats.totalStudents : ((stats ? stats.totalStudents : users.filter(u => !!u.trackId).length) || 0));
+
+  const checkedIn = useBackendStats ? stats.checkedInToday : (calculatedStats ? calculatedStats.checkedIn : ((stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in" || a.status?.toLowerCase().includes("late")).length) || 0));
   
-  const lateArrivals = calculatedStats ? calculatedStats.lateArrivals : attendance.filter(a => a.status && a.status.toLowerCase().includes("late")).length;
+  const lateArrivals = useBackendStats ? stats.lateArrivals : (calculatedStats ? calculatedStats.lateArrivals : attendance.filter(a => a.status && a.status.toLowerCase().includes("late")).length);
   
-  const onTime = calculatedStats ? calculatedStats.onTime : Math.max(0, checkedIn - lateArrivals);
+  const onTime = useBackendStats ? (stats.onTime || Math.max(0, checkedIn - lateArrivals)) : (calculatedStats ? calculatedStats.onTime : Math.max(0, checkedIn - lateArrivals));
 
   // Calculate Absent
   const totalUsers = totalStaff + totalStudents;
-  const absentCount = calculatedStats ? calculatedStats.absent : (totalUsers - checkedIn);
+  const absentCount = useBackendStats ? (stats.absent || Math.max(0, totalUsers - checkedIn)) : (calculatedStats ? calculatedStats.absent : (totalUsers - checkedIn));
 
   const statCards: Stat[] = [
     {
