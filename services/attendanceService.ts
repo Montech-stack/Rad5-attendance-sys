@@ -1,3 +1,5 @@
+import { apiRequest } from "@/lib/api"
+
 export async function checkInAttendance({
   latitude,
   longitude,
@@ -16,25 +18,38 @@ export async function checkInAttendance({
 
   console.log("📤 Sending check-in payload:", payload)
 
-  const res = await fetch(
-    "https  ://attendance.bookbank.com.ng/attendance/check-in",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    }
-  )
-
-  const data = await res.json()
-
-  console.log("📥 Backend response:", data)
-
-  if (!res.ok) {
-    throw new Error(data.message || "Check-in failed")
-  }
-
-  return data
+  return apiRequest("/attendance/check-in", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  })
 }
+
+export function manualCheckIn(data: {
+  email: string
+  date: string
+  time: string
+}) {
+  return apiRequest("/attendance/manual-checkin", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export function manualCheckOut(data: {
+  email: string
+  date: string
+  time: string
+}) {
+  return apiRequest("/attendance/manual-checkout", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export function getAttendanceHistory(userId: string) {
+  return apiRequest(`/attendance/attendance/users/${userId}`)
+}
+

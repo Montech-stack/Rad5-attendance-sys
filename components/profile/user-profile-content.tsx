@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/api";
+import { manualCheckIn, manualCheckOut, getAttendanceHistory } from "@/services/attendanceService";
+import { deleteUser } from "@/services/userService";
 import ProfileCard from "@/components/profile/profile-card";
 import AttendanceOverview from "@/components/profile/attendance-overview";
 import QuickCheckIn from "@/components/profile/quick-check-in";
@@ -57,7 +58,7 @@ export default function UserProfileContent({ user, showCheckIn = true, onDelete 
         if (!user?.id) return;
         try {
             setLoadingHistory(true);
-            const res = await apiRequest(`/attendance/attendance/users/${user.id}`);
+            const res = await getAttendanceHistory(user.id);
             setAttendance(res.data?.data || res.data || []);
         } catch (e) {
             console.error("Failed to fetch user attendance history", e);
@@ -71,7 +72,7 @@ export default function UserProfileContent({ user, showCheckIn = true, onDelete 
         setIsDeleting(true);
         try {
             // DELETE {{url}}/users/delete/:id
-            await apiRequest(`/users/delete/${user.id}`, { method: "DELETE" });
+            await deleteUser(user.id);
             if (onDelete) onDelete();
         } catch (err) {
             console.error("Failed to delete user", err);
@@ -89,18 +90,17 @@ export default function UserProfileContent({ user, showCheckIn = true, onDelete 
         }
         setActionLoading(true);
         try {
-            const endpoint = actionType === "check-in"
-                ? "/attendance/manual-checkin"
-                : "/attendance/manual-checkout";
+            const payload = {
+                email: user.email,
+                date: actionDate,
+                time: actionTime
+            };
 
-            await apiRequest(endpoint, {
-                method: "POST",
-                body: JSON.stringify({
-                    email: user.email,
-                    date: actionDate,
-                    time: actionTime
-                })
-            });
+            if (actionType === "check-in") {
+                await manualCheckIn(payload);
+            } else {
+                await manualCheckOut(payload);
+            }
 
             setIsActionDialogOpen(false);
             // Refresh history

@@ -12,3 +12,9 @@ export function createUser(data: {
     body: JSON.stringify(data),
   });
 }
+
+export function deleteUser(userId: string) {
+  return apiRequest(`/users/delete/${userId}`, {
+    method: "DELETE",
+  });
+}
