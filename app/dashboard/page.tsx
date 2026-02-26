@@ -18,7 +18,7 @@ interface User {
   role?: string | { name: string };
   trackId?: string | null;
   department?: string;
-  status?: "checked_in" | "checked_out" | "late" | "absent";
+  status?: "on_time" | "checked_out" | "late" | "absent";
   isLate?: boolean;
   location?: string;
   lastActivity?: string;
@@ -151,38 +151,24 @@ export default function DashboardPage() {
       (a.user && a.user.id && String(a.user.id) === userId)
     );
 
-    let status: "checked_in" | "checked_out" | "late" | "absent" = "absent";
-    let isLate = false;
-
+    let status: "on_time" | "checked_out" | "late" | "absent" = "absent";
+    
     if (record) {
-      // Prioritize explicit status field
       const s = record.status ? String(record.status).toLowerCase() : "";
-      
-      // Determine if late (persists even if checked out)
-      if (s.includes("late") || record.isLate) {
-        isLate = true;
-      }
 
-      // Determine current status
-      // 1. Check Out takes precedence if they are gone
-      if (s.includes("checked_out") || s.includes("check_out") || record.checkOutTime) {
+      if (record.checkOutTime || s.includes("checked_out") || s.includes("check_out")) {
         status = "checked_out";
-      } 
-      // 2. Late check - if they are late and NOT checked out, they are "late" (which implies checked in)
-      else if (isLate) {
+      } else if (s.includes("late") || record.isLate) {
         status = "late";
-      } 
-      // 3. Checked In / Present / On Time
-      else if (s.includes("checked_in") || s.includes("present") || s.includes("on_time") || s.includes("on time") || record.checkInTime) {
-        status = "checked_in";
-      } 
-      // 4. Fallback if record exists
-      else {
-         status = "checked_in";
+      } else if (record.checkInTime || s.includes("checked_in") || s.includes("present") || s.includes("on_time") || s.includes("on time")) {
+        status = "on_time";
+      } else {
+        // If a record exists for today, assume they are on time unless otherwise specified
+        status = "on_time"; 
       }
     }
 
-    return { ...u, status, isLate };
+    return { ...u, status };
   });
 
   // ---------------------
@@ -191,9 +177,9 @@ export default function DashboardPage() {
   const calculatedStats = {
     totalStaff: derivedUsers.filter(u => !u.trackId).length,
     totalStudents: derivedUsers.filter(u => !!u.trackId).length,
-    checkedIn: derivedUsers.filter(u => u.status === "checked_in" || u.status === "late").length,
-    onTime: derivedUsers.filter(u => !u.isLate && u.status !== "absent").length,
-    lateArrivals: derivedUsers.filter(u => u.isLate).length,
+    checkedIn: derivedUsers.filter(u => u.status === "on_time" || u.status === "late").length,
+    onTime: derivedUsers.filter(u => u.status === "on_time").length,
+    lateArrivals: derivedUsers.filter(u => u.status === "late").length,
     absent: derivedUsers.filter(u => u.status === "absent").length
   };
 

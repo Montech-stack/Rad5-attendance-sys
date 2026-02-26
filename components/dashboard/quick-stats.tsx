@@ -29,37 +29,25 @@ interface QuickStatsProps {
 }
 
 export default function QuickStats({ users, attendance, stats, calculatedStats, onFilterChange }: QuickStatsProps) {
-  // Use calculated stats if available (most accurate from frontend derived state), 
-  // otherwise fallback to backend stats or local calculation
   
-  // Prefer Backend Stats for aggregate counts if frontend calculation seems empty/suspicious (e.g., matching failed)
-  const useBackendStats = stats && (!calculatedStats || calculatedStats.checkedIn === 0) && stats.checkedInToday > 0;
+  // Prioritize backend stats if they exist and are valid.
+  const useBackendStats = stats && typeof stats.checkedInToday === 'number';
 
-  const totalStaff = useBackendStats ? stats.totalStaff : (calculatedStats ? calculatedStats.totalStaff : ((stats ? stats.totalStaff : users.filter(u => !u.trackId).length) || 0));
-  const totalStudents = useBackendStats ? stats.totalStudents : (calculatedStats ? calculatedStats.totalStudents : ((stats ? stats.totalStudents : users.filter(u => !!u.trackId).length) || 0));
-
-  const checkedIn = useBackendStats ? (stats.checkedInToday || 0) : (calculatedStats ? calculatedStats.checkedIn : ((stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in" || a.status?.toLowerCase().includes("late")).length) || 0));
+  const totalStaff = useBackendStats ? stats.totalStaff : calculatedStats?.totalStaff ?? 0;
+  const totalStudents = useBackendStats ? stats.totalStudents : calculatedStats?.totalStudents ?? 0;
   
-  const lateArrivals = useBackendStats ? (stats.lateArrivals || 0) : (calculatedStats ? calculatedStats.lateArrivals : attendance.filter(a => a.status && a.status.toLowerCase().includes("late")).length);
-  
-  // Ensure we are working with numbers to prevent NaN
-  const safeCheckedIn = Number(checkedIn) || 0;
-  const safeLateArrivals = Number(lateArrivals) || 0;
-
-  const onTime = useBackendStats 
-    ? (stats.onTime || Math.max(0, safeCheckedIn - safeLateArrivals)) 
-    : (calculatedStats ? calculatedStats.onTime : Math.max(0, safeCheckedIn - safeLateArrivals));
+  const checkedIn = useBackendStats ? stats.checkedInToday : calculatedStats?.checkedIn ?? 0;
+  const lateArrivals = useBackendStats ? stats.lateToday : calculatedStats?.lateArrivals ?? 0; // Use lateToday
+  const onTime = useBackendStats ? stats.presentToday : calculatedStats?.onTime ?? 0; // Use presentToday
 
   // Calculate Absent
   const totalUsers = (Number(totalStaff) || 0) + (Number(totalStudents) || 0);
-  const absentCount = useBackendStats 
-    ? (stats.absent || Math.max(0, totalUsers - safeCheckedIn)) 
-    : (calculatedStats ? calculatedStats.absent : Math.max(0, totalUsers - safeCheckedIn));
+  const absentCount = totalUsers > 0 ? totalUsers - (Number(checkedIn) || 0) : (calculatedStats?.absent ?? 0);
 
   const statCards: Stat[] = [
     {
       title: "Total Staff",
-      value: totalStaff,
+      value: totalStaff ?? 0,
       description: "Active employees",
       icon: Users,
       trend: { value: 2, label: "vs last month", positive: true },
@@ -68,7 +56,7 @@ export default function QuickStats({ users, attendance, stats, calculatedStats, 
     },
     {
       title: "Total Students",
-      value: totalStudents,
+      value: totalStudents ?? 0,
       description: "Enrolled students",
       icon: BookOpen,
       trend: { value: 12, label: "vs last month", positive: true },
@@ -77,7 +65,7 @@ export default function QuickStats({ users, attendance, stats, calculatedStats, 
     },
     {
       title: "Checked In",
-      value: checkedIn,
+      value: checkedIn ?? 0,
       description: "Present today",
       icon: MapPin,
       gradient: "from-emerald-500/10 to-emerald-500/5 border-emerald-200/50 dark:border-emerald-800/50",
@@ -85,7 +73,7 @@ export default function QuickStats({ users, attendance, stats, calculatedStats, 
     },
     {
       title: "On Time",
-      value: onTime,
+      value: onTime ?? 0,
       description: "Punctual arrivals",
       icon: CheckCircle2,
       trend: { value: 5, label: "vs yesterday", positive: true },
@@ -94,7 +82,7 @@ export default function QuickStats({ users, attendance, stats, calculatedStats, 
     },
     {
       title: "Late Arrivals",
-      value: lateArrivals,
+      value: lateArrivals ?? 0,
       description: "Needs attention",
       icon: Clock,
       trend: { value: 2, label: "vs yesterday", positive: false },
@@ -130,7 +118,7 @@ export default function QuickStats({ users, attendance, stats, calculatedStats, 
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
+              <div className="text-2xl font-bold tracking-tight">{stat.value ?? 0}</div>
               <div className="flex items-center text-xs text-muted-foreground mt-1 gap-1">
                 {stat.trend && (
                   <span className={`flex items-center ${stat.trend.positive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>

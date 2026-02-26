@@ -38,7 +38,7 @@ interface User {
   trackId?: string | null;
   trackName?: string; // Add this purely for UI passing
   department?: string;
-  status?: "checked_in" | "checked_out" | "late" | "absent";
+  status?: "on_time" | "checked_out" | "late" | "absent";
   phone?: string;
   role?: any;
 }
@@ -111,10 +111,10 @@ export default function EmployeeList({
       updated = updated.filter((u) => !u.trackId);
     } else if (filterType === "checked_in") {
       // Checked in means they are present (either on time or late)
-      updated = updated.filter(u => u.status === "checked_in" || u.status === "late");
+      updated = updated.filter(u => u.status === "on_time" || u.status === "late");
     } else if (filterType === "on_time") {
       // Strictly on time
-      updated = updated.filter(u => u.status === "checked_in");
+      updated = updated.filter(u => u.status === "on_time");
     } else if (filterType === "late") {
       updated = updated.filter(u => u.status === "late");
     } else if (filterType === "absent") {
@@ -287,13 +287,13 @@ export default function EmployeeList({
 
                   <div className="flex items-center justify-end sm:border-0 border-t border-border/50 pt-3 sm:pt-0">
                     <Badge
-                      className={`h-7 px-3 capitalize shadow-none ${user.status === "checked_in" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" :
+                      className={`h-7 px-3 capitalize shadow-none ${user.status === "on_time" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" :
                         user.status === "late" ? "bg-amber-100 text-amber-700 hover:bg-amber-200" :
                           "bg-slate-100 text-slate-500 hover:bg-slate-200"
                         }`}
                       variant="secondary"
                     >
-                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${user.status === "checked_in" ? "bg-emerald-500" :
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${user.status === "on_time" ? "bg-emerald-500" :
                         user.status === "late" ? "bg-amber-500" :
                           "bg-slate-400"
                         }`} />

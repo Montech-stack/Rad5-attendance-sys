@@ -51,28 +51,13 @@ export default function AnalyticsCharts({ attendance, users, history = [], stats
     // ----------------------------------------
     // 2. Calculate Today's Status (Pie Chart)
     // ----------------------------------------
-    // Prefer calculatedStats (frontend derived) for consistency, then backend `stats`, then fallback
-    const totalCheckIns = calculatedStats ? calculatedStats.checkedIn : (typeof stats?.checkedInToday === "number" ? stats.checkedInToday : attendance.length);
-    
-    const totalUsers = calculatedStats 
-        ? (calculatedStats.totalStaff + calculatedStats.totalStudents) 
-        : (typeof stats?.totalStaff === "number" || typeof stats?.totalStudents === "number"
-            ? (Number(stats?.totalStaff || 0) + Number(stats?.totalStudents || 0))
-            : users.length);
+    // Prioritize backend stats for consistency and accuracy
+    const onTimeCheckIns = stats?.presentToday ?? calculatedStats?.onTime ?? 0;
+    const lateCheckIns = stats?.lateToday ?? calculatedStats?.lateArrivals ?? 0;
+    const totalCheckIns = stats?.checkedInToday ?? (onTimeCheckIns + lateCheckIns);
 
-    // late must be computed from today's attendance records
-    const lateCheckIns = calculatedStats 
-        ? calculatedStats.lateArrivals 
-        : attendance.filter((a) => {
-            const s = a.status ? String(a.status).toLowerCase() : "";
-            return s.includes("late");
-        }).length;
-    
-    const onTimeCheckIns = calculatedStats 
-        ? calculatedStats.onTime 
-        : Math.max(0, totalCheckIns - lateCheckIns);
-    
-    const absentCount = calculatedStats ? calculatedStats.absent : Math.max(0, totalUsers - totalCheckIns);
+    const totalUsers = (stats?.totalStaff ?? 0) + (stats?.totalStudents ?? 0);
+    const absentCount = totalUsers > 0 ? Math.max(0, totalUsers - totalCheckIns) : (calculatedStats?.absent ?? 0);
 
     // Colorful Palette
     const attendanceStatus = [
