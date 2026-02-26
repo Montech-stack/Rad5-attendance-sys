@@ -61,9 +61,16 @@ export default function AnalyticsCharts({ attendance, users, history = [], stats
             : users.length);
 
     // late must be computed from today's attendance records
-    const lateCheckIns = calculatedStats ? calculatedStats.lateArrivals : attendance.filter((a) => a.status?.toLowerCase().includes("late")).length;
+    const lateCheckIns = calculatedStats 
+        ? calculatedStats.lateArrivals 
+        : attendance.filter((a) => {
+            const s = a.status ? String(a.status).toLowerCase() : "";
+            return s.includes("late");
+        }).length;
     
-    const onTimeCheckIns = calculatedStats ? calculatedStats.onTime : Math.max(0, totalCheckIns - lateCheckIns);
+    const onTimeCheckIns = calculatedStats 
+        ? calculatedStats.onTime 
+        : Math.max(0, totalCheckIns - lateCheckIns);
     
     const absentCount = calculatedStats ? calculatedStats.absent : Math.max(0, totalUsers - totalCheckIns);
 

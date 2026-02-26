@@ -19,6 +19,7 @@ interface User {
   trackId?: string | null;
   department?: string;
   status?: "checked_in" | "checked_out" | "late" | "absent";
+  isLate?: boolean;
   location?: string;
   lastActivity?: string;
   phone?: string;
@@ -143,34 +144,45 @@ export default function DashboardPage() {
 
     // Try to find attendance record using multiple possible ID fields with loose equality/string conversion
     const record = attendance.find(a => 
-      (String(a.userId) === userId) || 
-      (String(a.user_id) === userId) || 
-      (String(a.employeeId) === userId) ||
-      (String(a.studentId) === userId) ||
-      (a.user && String(a.user.id) === userId) ||
-      // Fallback: check if user object is nested directly without an ID property key match
-      (a.id === userId)
+      (a.userId && String(a.userId) === userId) || 
+      (a.user_id && String(a.user_id) === userId) || 
+      (a.employeeId && String(a.employeeId) === userId) ||
+      (a.studentId && String(a.studentId) === userId) ||
+      (a.user && a.user.id && String(a.user.id) === userId)
     );
 
     let status: "checked_in" | "checked_out" | "late" | "absent" = "absent";
+    let isLate = false;
 
     if (record) {
       // Prioritize explicit status field
       const s = record.status ? String(record.status).toLowerCase() : "";
       
-      if (s.includes("late")) {
-        status = "late";
-      } else if (s.includes("checked_in") || s.includes("present") || s === "on_time") {
-        status = "checked_in";
-      } else if (s.includes("checked_out")) {
+      // Determine if late (persists even if checked out)
+      if (s.includes("late") || record.isLate) {
+        isLate = true;
+      }
+
+      // Determine current status
+      // 1. Check Out takes precedence if they are gone
+      if (s.includes("checked_out") || s.includes("check_out") || record.checkOutTime) {
         status = "checked_out";
-      } else {
-         // If a record exists for today, assume they are checked in unless explicitly checked out
+      } 
+      // 2. Late check - if they are late and NOT checked out, they are "late" (which implies checked in)
+      else if (isLate) {
+        status = "late";
+      } 
+      // 3. Checked In / Present / On Time
+      else if (s.includes("checked_in") || s.includes("present") || s.includes("on_time") || s.includes("on time") || record.checkInTime) {
+        status = "checked_in";
+      } 
+      // 4. Fallback if record exists
+      else {
          status = "checked_in";
       }
     }
 
-    return { ...u, status };
+    return { ...u, status, isLate };
   });
 
   // ---------------------
@@ -180,9 +192,9 @@ export default function DashboardPage() {
     totalStaff: derivedUsers.filter(u => !u.trackId).length,
     totalStudents: derivedUsers.filter(u => !!u.trackId).length,
     checkedIn: derivedUsers.filter(u => u.status === "checked_in" || u.status === "late").length,
-    onTime: derivedUsers.filter(u => u.status === "checked_in").length,
-    lateArrivals: derivedUsers.filter(u => u.status === "late").length,
-    absent: derivedUsers.filter(u => u.status === "absent" || !u.status).length
+    onTime: derivedUsers.filter(u => !u.isLate && u.status !== "absent").length,
+    lateArrivals: derivedUsers.filter(u => u.isLate).length,
+    absent: derivedUsers.filter(u => u.status === "absent").length
   };
 
   return (

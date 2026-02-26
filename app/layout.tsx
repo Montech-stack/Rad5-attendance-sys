@@ -10,7 +10,9 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "RAD5 Attendance System",
   description: "Location-based attendance tracking system",
-  
+  icons: {
+    icon: "/logo.png",
+  },
 }
 
 export default function RootLayout({
