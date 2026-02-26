@@ -62,7 +62,9 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       const res = await apiRequest("/users/users?limit=1000");
-      const data = res.data?.data || res.data || [];
+      // Handle various response structures
+      const data = Array.isArray(res) ? res : (res.data?.data || res.data || []);
+      console.log("Users fetched:", data);
       setUsers(data);
     } catch (err) {
       console.error("Failed to fetch users:", err);
@@ -77,7 +79,10 @@ export default function DashboardPage() {
   const fetchAttendance = useCallback(async () => {
     try {
       const res = await apiRequest("/attendance/today");
-      setAttendance(res.data || []);
+      // Handle various response structures (array or object)
+      const data = Array.isArray(res) ? res : (res.data || []);
+      console.log("Attendance fetched:", data);
+      setAttendance(data);
     } catch (err) {
       console.error("Failed to fetch attendance:", err);
     }
@@ -103,7 +108,8 @@ export default function DashboardPage() {
   const fetchHistory = useCallback(async () => {
     try {
       const res = await apiRequest("/attendance/attendance/users"); // Helper for all records
-      setHistory(res.data || []);
+      const data = Array.isArray(res) ? res : (res.data?.data || res.data || []);
+      setHistory(data);
     } catch (err) {
       console.error("Failed to fetch history:", err);
     }
@@ -133,15 +139,26 @@ export default function DashboardPage() {
   // Derive Users with Status
   // ---------------------
   const derivedUsers = users.map(u => {
-    const record = attendance.find(a => a.userId === u.id);
+    // Try to find attendance record using multiple possible ID fields
+    const record = attendance.find(a => 
+      (a.userId === u.id) || 
+      (a.user_id === u.id) || 
+      (a.user && a.user.id === u.id)
+    );
+
     let status: "checked_in" | "checked_out" | "late" | "absent" = "absent";
 
     if (record) {
       const s = record.status ? record.status.toLowerCase() : "";
       if (s.includes("late")) {
         status = "late";
-      } else {
+      } else if (s.includes("checked_in") || s.includes("present") || s === "on_time") {
         status = "checked_in";
+      } else if (s.includes("checked_out")) {
+        status = "checked_out";
+      } else {
+         // If a record exists for today but status is ambiguous, assume present/checked_in
+         status = "checked_in";
       }
     }
 
