@@ -38,15 +38,23 @@ export default function QuickStats({ users, attendance, stats, calculatedStats, 
   const totalStaff = useBackendStats ? stats.totalStaff : (calculatedStats ? calculatedStats.totalStaff : ((stats ? stats.totalStaff : users.filter(u => !u.trackId).length) || 0));
   const totalStudents = useBackendStats ? stats.totalStudents : (calculatedStats ? calculatedStats.totalStudents : ((stats ? stats.totalStudents : users.filter(u => !!u.trackId).length) || 0));
 
-  const checkedIn = useBackendStats ? stats.checkedInToday : (calculatedStats ? calculatedStats.checkedIn : ((stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in" || a.status?.toLowerCase().includes("late")).length) || 0));
+  const checkedIn = useBackendStats ? (stats.checkedInToday || 0) : (calculatedStats ? calculatedStats.checkedIn : ((stats ? stats.checkedInToday : attendance.filter(a => a.status === "checked_in" || a.status?.toLowerCase().includes("late")).length) || 0));
   
-  const lateArrivals = useBackendStats ? stats.lateArrivals : (calculatedStats ? calculatedStats.lateArrivals : attendance.filter(a => a.status && a.status.toLowerCase().includes("late")).length);
+  const lateArrivals = useBackendStats ? (stats.lateArrivals || 0) : (calculatedStats ? calculatedStats.lateArrivals : attendance.filter(a => a.status && a.status.toLowerCase().includes("late")).length);
   
-  const onTime = useBackendStats ? (stats.onTime || Math.max(0, checkedIn - lateArrivals)) : (calculatedStats ? calculatedStats.onTime : Math.max(0, checkedIn - lateArrivals));
+  // Ensure we are working with numbers to prevent NaN
+  const safeCheckedIn = Number(checkedIn) || 0;
+  const safeLateArrivals = Number(lateArrivals) || 0;
+
+  const onTime = useBackendStats 
+    ? (stats.onTime || Math.max(0, safeCheckedIn - safeLateArrivals)) 
+    : (calculatedStats ? calculatedStats.onTime : Math.max(0, safeCheckedIn - safeLateArrivals));
 
   // Calculate Absent
-  const totalUsers = totalStaff + totalStudents;
-  const absentCount = useBackendStats ? (stats.absent || Math.max(0, totalUsers - checkedIn)) : (calculatedStats ? calculatedStats.absent : (totalUsers - checkedIn));
+  const totalUsers = (Number(totalStaff) || 0) + (Number(totalStudents) || 0);
+  const absentCount = useBackendStats 
+    ? (stats.absent || Math.max(0, totalUsers - safeCheckedIn)) 
+    : (calculatedStats ? calculatedStats.absent : Math.max(0, totalUsers - safeCheckedIn));
 
   const statCards: Stat[] = [
     {
