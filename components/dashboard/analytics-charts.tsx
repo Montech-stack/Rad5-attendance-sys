@@ -35,12 +35,22 @@ export default function AnalyticsCharts({ attendance, users, history = [], stats
             const dateStr = date.toISOString().split('T')[0];
             const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
 
-            const records = history.filter((r: any) =>
-                r.date === dateStr || r.createdAt?.startsWith(dateStr)
-            );
+            let present = 0;
+            let late = 0;
 
-            const present = records.length;
-            const late = records.filter((r: any) => r.status && r.status.toLowerCase().includes("late")).length;
+            if (i === 0) {
+                // For today, use the pre-filtered `attendance` array for accuracy, which is passed from the parent.
+                present = calculatedStats?.checkedIn ?? attendance.length;
+                late = calculatedStats?.lateArrivals ?? attendance.filter((r: any) => r.status && String(r.status).toLowerCase().includes("late")).length;
+            } else {
+                // For past days, filter the full history
+                const records = history.filter((r: any) =>
+                    (r.date && r.date === dateStr) || (r.createdAt && r.createdAt.startsWith(dateStr))
+                );
+                present = records.length;
+                late = records.filter((r: any) => r.status && String(r.status).toLowerCase().includes("late")).length;
+            }
+            
             const absent = Math.max(0, users.length - present);
 
             days.push({ day: dayName, present, late, absent });
