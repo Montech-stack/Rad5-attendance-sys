@@ -79,13 +79,31 @@ export default function DashboardPage() {
   // ---------------------
   const fetchAttendance = useCallback(async () => {
     try {
-      const res = await apiRequest("/attendance/today");
-      // Handle various response structures (array or object)
-      const data = Array.isArray(res) ? res : (res.data || []);
-      console.log("Attendance fetched:", data);
-      setAttendance(data);
+      // Per user feedback, using the full history endpoint is the source of truth
+      const res = await apiRequest("/attendance/attendance/users");
+      const allRecords = res.data?.data || res.data || [];
+
+      // Get today's date in YYYY-MM-DD format
+      const todayString = new Date().toISOString().split('T')[0];
+
+      const todaysAttendance = allRecords.filter((record: any) => {
+        // The backend provides a `date` field in 'YYYY-MM-DD' format, which is reliable for filtering
+        return record.date === todayString;
+      });
+
+      console.log("Today's Attendance (filtered from history):", todaysAttendance);
+      setAttendance(todaysAttendance);
     } catch (err) {
-      console.error("Failed to fetch attendance:", err);
+      console.error("Failed to fetch attendance from /attendance/attendance/users:", err);
+      // As a fallback, try to hit the original /today endpoint if the main one fails
+      try {
+        console.log("Falling back to /attendance/today endpoint...");
+        const fallbackRes = await apiRequest("/attendance/today");
+        const fallbackData = Array.isArray(fallbackRes) ? fallbackRes : (fallbackRes.data || []);
+        setAttendance(fallbackData);
+      } catch (fallbackErr) {
+        console.error("Fallback to /attendance/today also failed:", fallbackErr);
+      }
     }
   }, []);
 
