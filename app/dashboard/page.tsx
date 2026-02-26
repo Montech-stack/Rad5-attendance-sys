@@ -153,18 +153,18 @@ export default function DashboardPage() {
 
     let status: "on_time" | "checked_out" | "late" | "absent" = "absent";
     
+    // Only assign a non-absent status if a record for today actually exists
     if (record) {
       const s = record.status ? String(record.status).toLowerCase() : "";
 
+      // Start with the most specific status and move down
       if (record.checkOutTime || s.includes("checked_out") || s.includes("check_out")) {
         status = "checked_out";
       } else if (s.includes("late") || record.isLate) {
         status = "late";
-      } else if (record.checkInTime || s.includes("checked_in") || s.includes("present") || s.includes("on_time") || s.includes("on time")) {
-        status = "on_time";
       } else {
-        // If a record exists for today, assume they are on time unless otherwise specified
-        status = "on_time"; 
+        // If a record exists and they aren't checked out or late, they must be on time.
+        status = "on_time";
       }
     }
 
